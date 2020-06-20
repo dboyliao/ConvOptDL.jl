@@ -1,0 +1,13 @@
+name = "ConvOptDL"
+uuid = "a661a274-5c23-46c0-a996-9ba0433c0e87"
+authors = ["dboyliao <qmalliao@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.4.1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
