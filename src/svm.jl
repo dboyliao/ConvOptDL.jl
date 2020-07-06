@@ -1,7 +1,5 @@
 export crammer_svm
 
-include("qp.jl")
-
 """
 Implement multi-class kernel-based SVM
 
@@ -15,5 +13,3 @@ function crammer_svm(embed_support, labels_support, embed_query)
     # compute compatibility
     return nothing
 end
-
-@adjoint crammer_svm(embed_support, labels_support, embed_query) = crammer_svm(embed_support, labels_support, embed_query), (Δ) -> (nothing, nothing, embed_query)
