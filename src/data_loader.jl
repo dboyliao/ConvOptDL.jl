@@ -1,4 +1,4 @@
-export FewShotDataLoader, sample
+export FewShotDataLoader
 
 using Serialization
 import StatsBase
@@ -64,13 +64,14 @@ struct MetaDataSample
     end
 end
 
-function sample(
+function StatsBase.sample(
     dloader::FewShotDataLoader;
     train_n_ways = 2,
     train_k_shots = 5,
     test_n_ways = train_n_ways,
     test_k_shots = train_k_shots,
 )
+    # find exclusive train/test samples
     uniq_labels = unique(dloader.labels)
     idx_map = Dict([(k, i) for (i, k) in enumerate(uniq_labels)])
     train_target_labels = StatsBase.sample(uniq_labels, train_n_ways, replace = false)
@@ -83,7 +84,6 @@ function sample(
         test_n_ways,
         replace = false,
     )
-
     train_candidate_idxs =
         vcat([dloader.label2Idices[label] for label in train_target_labels]...)
     test_candidate_idxs =
@@ -111,7 +111,7 @@ function sample(
     )
 end
 
-function sample(
+function StatsBase.sample(
     dloader::FewShotDataLoader,
     n::Int64;
     train_n_ways = 2,
@@ -120,7 +120,7 @@ function sample(
     test_k_shots = train_k_shots,
 )
     meta_samples = [
-        sample(
+        StatsBase.sample(
                 dloader,
                 train_n_ways = train_n_ways,
                 train_k_shots = train_k_shots,

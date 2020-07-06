@@ -1,13 +1,7 @@
 export crammer_svm
 
-using Zygote
-using JuMP
+include("qp.jl")
 
-# @adjoint foo(x)
-#   y = g(x)
-#   z = h(y)
-#   return z, (Δ) -> Δ + y
-# end
 """
 Implement multi-class kernel-based SVM
 
@@ -15,6 +9,11 @@ Implement multi-class kernel-based SVM
 
 - http://jmlr.csail.mit.edu/papers/volume2/crammer01a/crammer01a.pdf
 """
-@adjoint crammer_svm(embed_support, labels_support, embed_query)
-    return nothing, (Δ) -> (nothing, nothing, embed_query)
+function crammer_svm(embed_support, labels_support, embed_query)
+    # construct dual QP problem
+    # solve QP
+    # compute compatibility
+    return nothing
 end
+
+@adjoint crammer_svm(embed_support, labels_support, embed_query) = crammer_svm(embed_support, labels_support, embed_query), (Δ) -> (nothing, nothing, embed_query)
