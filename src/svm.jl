@@ -1,5 +1,7 @@
 export crammer_svm
 
+using Flux
+
 """
 Implement multi-class kernel-based SVM
 

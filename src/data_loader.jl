@@ -1,7 +1,7 @@
 export FewShotDataLoader
 
 using Serialization
-import StatsBase
+import StatsBase: sample, Weights
 
 struct FewShotDataLoader
     labels::Any
@@ -64,7 +64,7 @@ struct MetaDataSample
     end
 end
 
-function StatsBase.sample(
+function sample(
     dloader::FewShotDataLoader;
     train_n_ways = 2,
     train_k_shots = 5,
@@ -74,27 +74,18 @@ function StatsBase.sample(
     # find exclusive train/test samples
     uniq_labels = unique(dloader.labels)
     idx_map = Dict([(k, i) for (i, k) in enumerate(uniq_labels)])
-    train_target_labels = StatsBase.sample(uniq_labels, train_n_ways, replace = false)
+    train_target_labels = sample(uniq_labels, train_n_ways, replace = false)
     idxs = [idx_map[label] for label in train_target_labels]
     weight_vs = ones(size(uniq_labels, 1))
     weight_vs[idxs] .= 0
-    test_target_labels = StatsBase.sample(
-        uniq_labels,
-        StatsBase.Weights(weight_vs),
-        test_n_ways,
-        replace = false,
-    )
+    test_target_labels =
+        sample(uniq_labels, Weights(weight_vs), test_n_ways, replace = false)
     train_candidate_idxs =
         vcat([dloader.label2Idices[label] for label in train_target_labels]...)
     test_candidate_idxs =
         vcat([dloader.label2Idices[label] for label in test_target_labels]...)
-    train_idxs = StatsBase.sample(
-        train_candidate_idxs,
-        train_n_ways * train_k_shots,
-        replace = false,
-    )
-    test_idxs =
-        StatsBase.sample(test_candidate_idxs, test_n_ways * test_k_shots, replace = false)
+    train_idxs = sample(train_candidate_idxs, train_n_ways * train_k_shots, replace = false)
+    test_idxs = sample(test_candidate_idxs, test_n_ways * test_k_shots, replace = false)
     train_samples = dloader.samples[train_idxs]
     train_labels = dloader.labels[train_idxs]
     test_samples = dloader.samples[test_idxs]
@@ -111,7 +102,7 @@ function StatsBase.sample(
     )
 end
 
-function StatsBase.sample(
+function sample(
     dloader::FewShotDataLoader,
     n::Int64;
     train_n_ways = 2,
@@ -120,14 +111,13 @@ function StatsBase.sample(
     test_k_shots = train_k_shots,
 )
     meta_samples = [
-        StatsBase.sample(
-                dloader,
-                train_n_ways = train_n_ways,
-                train_k_shots = train_k_shots,
-                test_n_ways = train_n_ways,
-                test_k_shots = train_k_shots,
-            )
-        for _ in 1:n
+        sample(
+            dloader,
+            train_n_ways = train_n_ways,
+            train_k_shots = train_k_shots,
+            test_n_ways = train_n_ways,
+            test_k_shots = train_k_shots,
+        ) for _ = 1:n
     ]
     meta_samples
 end

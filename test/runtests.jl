@@ -1,12 +1,5 @@
 using ConvOptDL
-using Test
-using StatsBase
 
-@testset "data_loader.jl" begin
-    # Write your tests here.
-    dloader = FewShotDataLoader("./test_data.jls")
-    meta_samples = sample(dloader, 2)
-    @test length(meta_samples) == 2
-    meta_sample = sample(dloader)
-    @test intersect(meta_sample.train_labels, meta_sample.test_labels) |> isempty
-end
+include("data_loader_tests.jl")
+include("util_tests.jl")
+include("qp_tests.jl")
