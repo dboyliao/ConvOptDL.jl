@@ -31,16 +31,7 @@ s.t Gx ≤ h
 - `λs_`: adjoint values of inequality constraints
 - `νs_`: adjoint values of equality constraints
 """
-function solve_qp(
-    Q,
-    p,
-    G,
-    h,
-    A,
-    b,
-    optimizer = SCS.Optimizer;
-    kwargs...,
-)
+function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
     # solve qp and return x
     dim_x = size(Q, 1)
     num_ineq = size(G, 1)
@@ -80,15 +71,7 @@ Solving QP in batch
 - `λs`: array of size (`dim_ineq`, `num_batch`) which are the adjoint values of inequality constraints
 - `νs`: array of size (`dim_eq`, `num_batch`) which are the adjoint values of equality constraints
 """
-function solve_qp_batch(
-    Q,
-    p,
-    G,
-    h,
-    A,
-    b,
-    optimizer = SCS.Optimizer
-)
+function solve_qp_batch(Q, p, G, h, A, b, optimizer = SCS.Optimizer)
     num_batch = size(Q, 3)
     dim_x = size(Q, 1)
     num_eq = size(A, 1)
@@ -103,16 +86,7 @@ function solve_qp_batch(
         h_ = h[:, :, i]
         A_ = A[:, :, i]
         b_ = b[:, i]
-        x, λs_, νs_ = solve_qp(
-            Q_,
-            p_,
-            G_,
-            h_,
-            A_,
-            b_,
-            optimizer,
-            verbose=false,
-        )
+        x, λs_, νs_ = solve_qp(Q_, p_, G_, h_, A_, b_, optimizer, verbose = false)
         X[:, i] .= x
         λs[:, i] .= λs_
         νs[:, i] .= νs_
@@ -120,25 +94,8 @@ function solve_qp_batch(
     return X, λs, νs
 end
 
-@adjoint function solve_qp_batch(
-    Q,
-    p,
-    G,
-    h,
-    A,
-    b,
-    optimizer = SCS.Optimizer
-)
-    X, λs, νs = solve_qp_batch(
-        Q,
-        p,
-        G,
-        h,
-        A,
-        b,
-        optimizer,
-        verbose=false,
-    )
+@adjoint function solve_qp_batch(Q, p, G, h, A, b, optimizer = SCS.Optimizer)
+    X, λs, νs = solve_qp_batch(Q, p, G, h, A, b, optimizer, verbose = false)
     function backward(ΔX, Δλs, Δνs)
         ΔQ = similar(Q)
         Δp = similar(p)
