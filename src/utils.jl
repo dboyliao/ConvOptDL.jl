@@ -11,7 +11,7 @@ function batch_outer(A, B)
     # return reshape(hcat(Cs...), (size(A, 1), size(B, 1), num_batch))
     C = Array{eltype(Cs[1])}(undef, size(A, 1), size(B, 1), num_batch)
     for i = 1:num_batch
-        C[:, :, i] = Cs[i]
+        C[:, :, i] .= Cs[i]
     end
     return C
 end
