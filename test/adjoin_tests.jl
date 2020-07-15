@@ -1,7 +1,7 @@
 using Test
-using Zygote
+using Flux
 using Serialization
-using ConvOptDL: solve_qp_batch_with_back
+using ConvOptDL: solve_qp_batch_with_back, solve_qp_batch
 
 # https://optimization.mccormick.northwestern.edu/index.php/Quadratic_programming#Numerical_example
 Qs = reshape([[3.0 1.0]; [1.0 1.0]], 2, 2, 1)
@@ -19,6 +19,22 @@ bs = reshape([1.5], 1, 1)
     Δνs = zeros(1, 1)
     Δ = (ΔX, Δλs, Δνs)
     ΔQs, Δps, ΔGs, Δhs, ΔAs, Δbs, _ = back(Δ)
+    ref_grads = Serialization.deserialize("ref_grads.jls")
+    @test ΔQs ≈ ref_grads["dQs"] atol=1e-16
+    @test Δps ≈ ref_grads["dps"] atol=1e-16
+    @test ΔGs ≈ ref_grads["dGs"] atol=1e-14
+    @test Δhs ≈ ref_grads["dhs"] atol=1e-16
+    @test ΔAs ≈ ref_grads["dAs"] atol=1e-5
+    @test Δbs ≈ ref_grads["dbs"] atol=1e-16
+end
+
+function dummy(Qs, ps, Gs, hs, As, bs)
+    X, _, _ = solve_qp_batch(Qs, ps, Gs, hs, As, bs)
+    sum(X)
+end
+
+@testset "QP Adjoint Test 2" begin
+    ΔQs, Δps, ΔGs, Δhs, ΔAs, Δbs = gradient(dummy , Qs, ps, Gs, hs, As, bs)
     ref_grads = Serialization.deserialize("ref_grads.jls")
     @test ΔQs ≈ ref_grads["dQs"] atol=1e-16
     @test Δps ≈ ref_grads["dps"] atol=1e-16
