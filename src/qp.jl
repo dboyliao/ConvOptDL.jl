@@ -122,7 +122,19 @@ function solve_qp_batch(
     return X, λs, νs
 end
 
-function solve_qp_batch_back(
+@adjoint function solve_qp_batch(
+    Q::AbstractArray{T,3},
+    p::AbstractArray{T,2},
+    G::AbstractArray{T,3},
+    h::AbstractArray{T,2},
+    A::AbstractArray{T,3},
+    b::AbstractArray{T,2},
+    optimizer = SCS.Optimizer,
+) where {T<:Real}
+    return solve_qp_batch_with_back(Q, p, G, h, A, b, optimizer)
+end
+
+function solve_qp_batch_with_back(
     Q::AbstractArray{T,3},
     p::AbstractArray{T,2},
     G::AbstractArray{T,3},
@@ -143,15 +155,20 @@ function solve_qp_batch_back(
         Δb = similar(b)
         # solve dQ, dp, dG, dh, dA, db
         for i = 1:num_batch
-            @inbounds x = X[:, i]
-            @inbounds λ = λs[:, i]
-            @inbounds ν = νs[:, i]
-            dx, dλ, dν = solve_kkt(Q, G, h, A, ΔX[:, i], λ, x)
-            @inbounds ΔQ[:, :, i] .= 0.5 * (dx * x' + x * dx') # dQ
+            @inbounds ν_ = νs[:, i]
+            @inbounds Q_ = Q[:, :, i]
+            @inbounds G_ = G[:, :, i]
+            @inbounds h_ = h[:, i]
+            @inbounds A_ = A[:, :, i]
+            @inbounds ΔX_ = ΔX[:, i]
+            @inbounds λ_ = λs[:, i]
+            @inbounds x_ = X[:, i]
+            dx, dλ, dν = solve_kkt(Q_, G_, h_, A_, λ_, x_, ΔX_)
+            @inbounds ΔQ[:, :, i] .= 0.5 * (dx * x_' + x_ * dx') # dQ
             @inbounds Δp[:, i] .= dx # dp
-            @inbounds ΔG[:, :, i] .= Diagonal(λ) * (dλ * x' + λ * dx') # dG
-            @inbounds Δh[:, i] .= -Diagonal(λ) * dλ # dh
-            @inbounds ΔA[:, :, i] .= (dν * x' + ν * dx') # dA
+            @inbounds ΔG[:, :, i] .= Diagonal(λ_) * (dλ * x_' + λ_ * dx') # dG
+            @inbounds Δh[:, i] .= -Diagonal(λ_) * dλ # dh
+            @inbounds ΔA[:, :, i] .= (dν * x_' + ν_ * dx') # dA
             @inbounds Δb[:, i] .= -dν # db
         end
         Δoptimizer = nothing
@@ -165,7 +182,9 @@ function solve_kkt(Q, G, h, A, λ, x, Δx)
     # TODO: G, h or A are empty
     # TODO: implement primal-dual interior point method (PDIPM) for solving kkt, better GPU utilization
     M = kkt_matrix(Q, G, h, A, λ, x)
-    sol = pinv(-M) * Δx
+    ndim = size(M, 1)
+    Δl = [Δx; zeros(ndim - size(Δx, 1))]
+    sol = pinv(-M) * Δl
     dx = sol[1:length(x)]
     dλ = sol[length(x)+1:length(x)+length(λ)]
     dν = sol[length(x)+length(λ)+1:end]
@@ -175,8 +194,8 @@ end
 function kkt_matrix(Q, G, h, A, λ, x)
     # TODO: G, h or A are empty
     return [
-        Q G' * Diagonal(λ) A'
-        G Diagonal(G * x - h) zeros(size(G, 1), size(A, 1))
-        A zeros(size(A, 1), size(h, 1)) zeros(size(A, 1), size(A, 1))
+        Q G' * Diagonal(λ) A';
+        G Diagonal(G * x - h) zeros(size(G, 1), size(A, 1));
+        A zeros(size(A, 1), size(h, 1)) zeros(size(A, 1), size(A, 1));
     ]
 end
