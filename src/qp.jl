@@ -103,20 +103,20 @@ function solve_qp_batch(
     X = similar(p)
     λs = similar(h)
     νs = similar(b)
-    for i = 1:num_batch
-        @inbounds Q_ = Q[:, :, i]
-        @inbounds p_ = p[:, i]
-        @inbounds G_ = G[:, :, i]
-        @inbounds h_ = h[:, i]
-        @inbounds A_ = A[:, :, i]
-        @inbounds b_ = b[:, i]
+    @inbounds for i = 1:num_batch
+        Q_ = @view Q[:, :, i]
+        G_ = @view G[:, :, i]
+        p_ = @view p[:, i]
+        h_ = @view h[:, i]
+        A_ = @view A[:, :, i]
+        b_ = @view b[:, i]
         x, λs_, νs_ = solve_qp(Q_, p_, G_, h_, A_, b_, optimizer, verbose = false)
-        @inbounds X[:, i] .= x
+        X[:, i] .= x
         if !isempty(λs_)
-            @inbounds λs[:, i] .= λs_
+            λs[:, i] .= λs_
         end
         if !isempty(νs_)
-            @inbounds νs[:, i] .= νs_
+            νs[:, i] .= νs_
         end
     end
     return X, λs, νs
@@ -154,22 +154,22 @@ function solve_qp_batch_with_back(
         ΔA = similar(A)
         Δb = similar(b)
         # solve dQ, dp, dG, dh, dA, db
-        for i = 1:num_batch
-            @inbounds ν_ = νs[:, i]
-            @inbounds Q_ = Q[:, :, i]
-            @inbounds G_ = G[:, :, i]
-            @inbounds h_ = h[:, i]
-            @inbounds A_ = A[:, :, i]
-            @inbounds ΔX_ = ΔX[:, i]
-            @inbounds λ_ = λs[:, i]
-            @inbounds x_ = X[:, i]
+        @inbounds for i = 1:num_batch
+            ν_ = @view νs[:, i]
+            Q_ = @view Q[:, :, i]
+            G_ = @view G[:, :, i]
+            h_ = @view h[:, i]
+            A_ = @view A[:, :, i]
+            ΔX_ = @view ΔX[:, i]
+            λ_ = @view λs[:, i]
+            x_ = @view X[:, i]
             dx, dλ, dν = solve_kkt(Q_, G_, h_, A_, λ_, x_, ΔX_)
-            @inbounds ΔQ[:, :, i] .= 0.5 * (dx * x_' + x_ * dx') # dQ
-            @inbounds Δp[:, i] .= dx # dp
-            @inbounds ΔG[:, :, i] .= Diagonal(λ_) * (dλ * x_' + λ_ * dx') # dG
-            @inbounds Δh[:, i] .= -Diagonal(λ_) * dλ # dh
-            @inbounds ΔA[:, :, i] .= (dν * x_' + ν_ * dx') # dA
-            @inbounds Δb[:, i] .= -dν # db
+            ΔQ[:, :, i] .= 0.5 * (dx * x_' + x_ * dx') # dQ
+            Δp[:, i] .= dx # dp
+            ΔG[:, :, i] .= Diagonal(λ_) * (dλ * x_' + λ_ * dx') # dG
+            Δh[:, i] .= -Diagonal(λ_) * dλ # dh
+            ΔA[:, :, i] .= (dν * x_' + ν_ * dx') # dA
+            Δb[:, i] .= -dν # db
         end
         Δoptimizer = nothing
         (ΔQ, Δp, ΔG, Δh, ΔA, Δb, Δoptimizer)

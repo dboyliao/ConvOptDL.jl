@@ -1,20 +1,23 @@
 export FewShotDataLoader
 
 using Serialization
+import Base: size
 import StatsBase: sample, Weights
 
 struct FewShotDataLoader
-    labels::Any
-    samples::Any
-    label2Idices::Any
+    labels::AbstractArray{L,1} where {L}
+    samples::AbstractArray
+    label2Idices::Dict
+    dims_feature::Integer
 
     function FewShotDataLoader(path::String)
         data = deserialize(path)
         @assert typeof(data) <: Dict "$path should containing a Dict, get $(typeof(data))"
         labels = data["labels"]
         samples = data["data"]
-        N = size(labels, 1)
-        label2Idices = Dict{Int64,Array{Int64,1}}()
+        @assert ndims(samples) >= 2 "ndims of samples should be at least 2, get $(ndims(samples))"
+        N = size(labels)[end]
+        label2Idices = Dict{eltype(labels),Array{Integer,1}}()
         for i = 1:N
             label = labels[i]
             if !haskey(label2Idices, label)
@@ -22,102 +25,174 @@ struct FewShotDataLoader
             end
             push!(label2Idices[label], i)
         end
-        new(labels, samples, label2Idices)
+        dims_feature = reduce((a, b) -> a * b, size(samples)[1:end-1])
+        new(labels, samples, label2Idices, dims_feature)
     end
 end
 
-struct MetaDataSample
-    train_n_ways::Int64
-    train_k_shots::Int64
-    test_n_ways::Int64
-    test_k_shots::Int64
-    train_samples::Any
-    train_labels::Any
-    test_samples::Any
-    test_labels::Any
+"""
+Fields
+======
 
-    function MetaDataSample(
-        train_n_ways,
-        train_k_shots,
-        test_n_ways,
-        test_k_shots,
-        train_samples,
-        train_labels,
-        test_samples,
-        test_labels,
+`support_samples`: array of support samples with size (`feature_dim`, `num_support`, `num_tasks`)
+`support_labels`: array of labels of support samples with size (`num_support`, `num_tasks`)
+`query_samples`: array of query samples with size (`feature_dim`, `num_query`, `num_tasks`)
+`query_labels`: array of labels of query samples with size (`num_query`, `num_tasks`)
+"""
+struct MetaDataSample{T,L}
+    support_n_ways::Integer
+    support_k_shots::Integer
+    query_n_ways::Integer
+    query_k_shots::Integer
+    support_samples::AbstractArray{T,3}
+    support_labels::AbstractArray{L,2}
+    query_samples::AbstractArray{T,3}
+    query_labels::AbstractArray{L,2}
+end
+
+function MetaDataSample(;
+    support_n_ways,
+    support_k_shots,
+    query_n_ways,
+    query_k_shots,
+    support_samples,
+    support_labels,
+    query_samples,
+    query_labels,
+)
+    @assert support_n_ways > 0 "support_n_ways must be positive: $support_n_ways"
+    @assert support_k_shots > 0 "support_k_shots must be positive: $support_k_shots"
+    @assert query_n_ways > 0 "query_n_ways must be positive: $query_n_ways"
+    @assert query_k_shots > 0 "query_k_shots must be positive: $query_k_shots"
+    @assert ndims(support_samples) >= 2 "support_samples must be at least 2-dim"
+    @assert ndims(query_samples) >= 2 "query_samples must be at least 2-dim"
+    @assert size(support_samples) == size(query_samples) "size of support samples and query samples should be the same"
+    n_tasks = size(support_samples)[end]
+    if ndims(support_samples) > 2
+        support_samples =
+            reshape(support_samples, :, support_n_ways * support_k_shots, n_tasks)
+        query_samples = reshape(query_samples, :, query_n_ways * query_k_shots, n_tasks)
+    end
+    for i = 1:n_tasks
+        support_label = support_labels[:, i]
+        query_label = query_labels[:, i]
+        @assert isempty(intersect(support_label, query_label)) "support_labels and query_labels is not disjoint at task $i"
+    end
+    MetaDataSample(
+        support_n_ways,
+        support_k_shots,
+        query_n_ways,
+        query_k_shots,
+        support_samples,
+        support_labels,
+        query_samples,
+        query_labels,
     )
-        @assert train_n_ways > 0 "train_n_ways must be positive: $train_n_ways"
-        @assert train_k_shots > 0 "train_k_shots must be positive: $train_k_shots"
-        @assert test_n_ways > 0 "test_n_ways must be positive: $test_n_ways"
-        @assert test_k_shots > 0 "test_k_shots must be positive: $test_k_shots"
-        @assert isempty(intersect(train_labels, test_labels)) "train_labels and test_labels should be disjoint"
-        new(
-            train_n_ways,
-            train_k_shots,
-            test_n_ways,
-            test_k_shots,
-            train_samples,
-            train_labels,
-            test_samples,
-            test_labels,
-        )
-    end
 end
 
-function sample(
+function size(meta_data_sample::MetaDataSample)
+    return size(meta_data_sample.support_samples)[end]
+end
+
+function _sample(
     dloader::FewShotDataLoader;
-    train_n_ways = 2,
-    train_k_shots = 5,
-    test_n_ways = train_n_ways,
-    test_k_shots = train_k_shots,
+    support_n_ways = 2,
+    support_k_shots = 5,
+    query_n_ways = support_n_ways,
+    query_k_shots = support_k_shots,
 )
     # find exclusive train/test samples
     uniq_labels = unique(dloader.labels)
     idx_map = Dict([(k, i) for (i, k) in enumerate(uniq_labels)])
-    train_target_labels = sample(uniq_labels, train_n_ways, replace = false)
-    idxs = [idx_map[label] for label in train_target_labels]
+    support_target_labels = sample(uniq_labels, support_n_ways, replace = false)
+    idxs = [idx_map[label] for label in support_target_labels]
     weight_vs = ones(size(uniq_labels, 1))
     weight_vs[idxs] .= 0
-    test_target_labels =
-        sample(uniq_labels, Weights(weight_vs), test_n_ways, replace = false)
-    train_candidate_idxs =
-        vcat([dloader.label2Idices[label] for label in train_target_labels]...)
-    test_candidate_idxs =
-        vcat([dloader.label2Idices[label] for label in test_target_labels]...)
-    train_idxs = sample(train_candidate_idxs, train_n_ways * train_k_shots, replace = false)
-    test_idxs = sample(test_candidate_idxs, test_n_ways * test_k_shots, replace = false)
-    train_samples = dloader.samples[train_idxs]
-    train_labels = dloader.labels[train_idxs]
-    test_samples = dloader.samples[test_idxs]
-    test_labels = dloader.labels[test_idxs]
+    query_target_labels =
+        sample(uniq_labels, Weights(weight_vs), query_n_ways, replace = false)
+    support_candidate_idxs =
+        vcat([dloader.label2Idices[label] for label in support_target_labels]...)
+    query_candidate_idxs =
+        vcat([dloader.label2Idices[label] for label in query_target_labels]...)
+    train_idxs =
+        sample(support_candidate_idxs, support_n_ways * support_k_shots, replace = false)
+    test_idxs = sample(query_candidate_idxs, query_n_ways * query_k_shots, replace = false)
+    support_samples = reshape(
+        dloader.samples[repeat([:], ndims(dloader.samples) - 1)..., train_idxs],
+        dloader.dims_feature,
+        support_n_ways * support_k_shots,
+        1,
+    )
+    support_labels = Utils.add_dim(dloader.labels[train_idxs,])
+    query_samples = reshape(
+        dloader.samples[repeat([:], ndims(dloader.samples) - 1)..., test_idxs],
+        dloader.dims_feature,
+        query_n_ways * query_k_shots,
+        1,
+    )
+    query_labels = Utils.add_dim(dloader.labels[test_idxs])
+    return support_samples, support_labels, query_samples, query_labels
+end
+
+function sample(
+    dloader::FewShotDataLoader;
+    support_n_ways = 2,
+    support_k_shots = 5,
+    query_n_ways = support_n_ways,
+    query_k_shots = support_k_shots,
+)
+    support_samples, support_labels, query_samples, query_labels = _sample(
+        dloader,
+        support_n_ways = support_n_ways,
+        support_k_shots = support_k_shots,
+        query_n_ways = query_n_ways,
+        query_k_shots = query_k_shots,
+    )
     MetaDataSample(
-        train_n_ways,
-        train_k_shots,
-        test_n_ways,
-        test_k_shots,
-        train_samples,
-        train_labels,
-        test_samples,
-        test_labels,
+        support_n_ways = support_n_ways,
+        support_k_shots = support_k_shots,
+        query_n_ways = query_n_ways,
+        query_k_shots = query_k_shots,
+        support_samples = support_samples,
+        support_labels = support_labels,
+        query_samples = query_samples,
+        query_labels = query_labels,
     )
 end
 
 function sample(
     dloader::FewShotDataLoader,
-    n::Int64;
-    train_n_ways = 2,
-    train_k_shots = 5,
-    test_n_ways = train_n_ways,
-    test_k_shots = train_k_shots,
+    n_tasks::Integer;
+    support_n_ways = 2,
+    support_k_shots = 5,
+    query_n_ways = support_n_ways,
+    query_k_shots = support_k_shots,
 )
-    meta_samples = [
-        sample(
+    support_sets = []
+    support_labels = []
+    query_sets = []
+    query_labels = []
+    for i = 1:n_tasks
+        support, support_label, query, query_label = _sample(
             dloader,
-            train_n_ways = train_n_ways,
-            train_k_shots = train_k_shots,
-            test_n_ways = train_n_ways,
-            test_k_shots = train_k_shots,
-        ) for _ = 1:n
-    ]
-    meta_samples
+            support_n_ways = support_n_ways,
+            support_k_shots = support_k_shots,
+            query_n_ways = query_n_ways,
+            query_k_shots = query_k_shots,
+        )
+        push!(support_sets, support)
+        push!(support_labels, support_label)
+        push!(query_sets, query)
+        push!(query_labels, query_label)
+    end
+    MetaDataSample(
+        support_n_ways = support_n_ways,
+        support_k_shots = support_k_shots,
+        query_n_ways = query_n_ways,
+        query_k_shots = query_k_shots,
+        support_samples = cat(support_sets..., dims = Val(3)),
+        support_labels = cat(support_labels..., dims = Val(2)),
+        query_samples = cat(query_sets..., dims = Val(3)),
+        query_labels = cat(query_labels..., dims = Val(2)),
+    )
 end
