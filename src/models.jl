@@ -1,4 +1,6 @@
 using Distributions
+using Flux: _isactive
+import Flux: testmode!
 export DropBlock
 
 """
@@ -6,9 +8,11 @@ https://arxiv.org/pdf/1810.12890.pdf
 """
 mutable struct DropBlock
     block_size::Integer
-    training::Bool
-    function DropBlock(block_size, training = true)
-        new(block_size, training)
+    keep_prop::AbstractFloat
+    active::Union{Bool,Nothing}
+    function DropBlock(block_size, keep_prop)
+        @assert 0 ≤ keep_prop ≤ 1
+        new(block_size, keep_prop, nothing)
     end
 end
 
@@ -35,16 +39,15 @@ function _get_mask(block::DropBlock, x, gamma)
     return mask
 end
 
-function (block::DropBlock)(x::AbstractArray{T,4}, keep_prob::AbstractFloat) where {T<:Real}
-    if block.training
-        feat_size = size(x, 1) * size(x, 2)
-        gamma =
-            (1 - keep_prob) / block.block_size^2 * feat_size^2 /
-            (feat_size - block.block_size + 1)^2
-        mask = _get_mask(block, x, gamma)
-        ret = x .* mask .* (length(mask) / sum(mask))
-    else
-        ret = x
-    end
-    return ret
+function (block::DropBlock)(x::AbstractArray{T,4}) where {T<:Real}
+    _isactive(block) || return x
+    feat_size = size(x, 1) * size(x, 2)
+    gamma =
+        (1 - block.keep_prop) / block.block_size^2 * feat_size^2 /
+        (feat_size - block.block_size + 1)^2
+    mask = _get_mask(block, x, gamma)
+    x .* mask .* (length(mask) / sum(mask))
 end
+
+testmode!(m::DropBlock, mode = true) =
+    (m.active = (isnothing(mode) || mode == :auto) ? nothing : !mode; m)
