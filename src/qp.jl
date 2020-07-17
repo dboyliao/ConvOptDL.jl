@@ -48,7 +48,18 @@ function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
     end
     obj = 0.5 * quadform(x, Q) + p'x
     problem = minimize(obj, collect(values(constraints)))
-    solve!(problem, optimizer; kwargs...)
+    if Sys.isunix()
+        stream_null = open("/dev/null", "w")
+    else
+        # assume windows
+        stream_null = open("nul", "w")
+    end
+    redirect_stdout(stream_null) do
+        redirect_stderr(stream_null) do
+            solve!(problem, optimizer; kwargs...)
+        end
+    end
+    close(stream_null)
     @assert problem.status == Convex.MOI.OPTIMAL
     x_ = isa(x.value, AbstractArray) ? dropdims(x.value, dims = 2) : [x.value]
     if haskey(constraints, "InEq")
@@ -110,7 +121,7 @@ function solve_qp_batch(
         h_ = @view h[:, i]
         A_ = @view A[:, :, i]
         b_ = @view b[:, i]
-        x, λs_, νs_ = solve_qp(Q_, p_, G_, h_, A_, b_, optimizer, verbose = false)
+        x, λs_, νs_ = solve_qp(Q_, p_, G_, h_, A_, b_, optimizer)
         X[:, i] .= x
         if !isempty(λs_)
             λs[:, i] .= λs_
@@ -194,8 +205,8 @@ end
 function kkt_matrix(Q, G, h, A, λ, x)
     # TODO: G, h or A are empty
     return [
-        Q G' * Diagonal(λ) A';
-        G Diagonal(G * x - h) zeros(size(G, 1), size(A, 1));
-        A zeros(size(A, 1), size(h, 1)) zeros(size(A, 1), size(A, 1));
+        Q G' * Diagonal(λ) A'
+        G Diagonal(G * x - h) zeros(size(G, 1), size(A, 1))
+        A zeros(size(A, 1), size(h, 1)) zeros(size(A, 1), size(A, 1))
     ]
 end
