@@ -5,6 +5,7 @@ include("data_loader.jl")
 include("qp.jl")
 include("svm.jl")
 include("layers/dropblock.jl")
+include("layers/basic_block.jl")
 include("utils.jl")
 
 end
