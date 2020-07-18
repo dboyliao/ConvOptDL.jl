@@ -30,7 +30,8 @@ function ResNetBasicBlock(
     downsample_block = downsample ?
         Chain(Conv((1, 1), in_channel => out_channel, stride = 1), BatchNorm(out_channel)) :
         identity
-    post_block = Chain((x)->leakyrelu(x, Float32(0.1)), MaxPool((stride, stride), stride=stride))
+    post_block =
+        Chain((x) -> leakyrelu(x, Float32(0.1)), MaxPool((stride, stride), stride = stride))
     drop_block = DropBlock(block_size, 1 - drop_prob)
     if drop_prob > 0
         Flux.trainmode!(drop_block)
@@ -48,3 +49,13 @@ function (block::ResNetBasicBlock)(x)
     out = block.drop_block(out)
     out
 end
+
+Flux.testmode!(m::ResNetBasicBlock, mode = true) = (
+    map(
+        x -> Flux.testmode!(x, mode),
+        (m.pre_block, m.downsample_block, m.post_block, m.drop_block),
+    );
+    m
+)
+
+Flux.functor(::Type{<:ResNetBasicBlock}, m) = (m.pre_block, m.downsample_block, m.post_block, m.drop_block), blocks -> ResNetBasicBlock(blocks...)
