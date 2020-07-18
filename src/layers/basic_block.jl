@@ -10,7 +10,7 @@ struct ResNetBasicBlock
 end
 
 function ResNetBasicBlock(
-    chs::Pair{Integer,Integer};
+    chs::Pair{<:Integer,<:Integer};
     init = Flux.kaiming_normal,
     drop_prob = 0.0,
     block_size = 3,
