@@ -58,4 +58,6 @@ Flux.testmode!(m::ResNetBasicBlock, mode = true) = (
     m
 )
 
-Flux.functor(::Type{<:ResNetBasicBlock}, m) = (m.pre_block, m.downsample_block, m.post_block, m.drop_block), blocks -> ResNetBasicBlock(blocks...)
+Flux.functor(::Type{<:ResNetBasicBlock}, m) =
+    (m.pre_block, m.downsample_block, m.post_block, m.drop_block),
+    blocks -> ResNetBasicBlock(blocks...)
