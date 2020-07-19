@@ -23,6 +23,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 StatsBase = "0.33"
+IJulia = "1.21"
 julia = "1.4.1"
 
 [extras]
