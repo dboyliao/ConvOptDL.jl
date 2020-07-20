@@ -4,6 +4,7 @@ This repo is WIP
 
 # TODOs
 
+- GPU support
 - implement `Block LU factorization` in the website below for better performance
   - https://locuslab.github.io/qpth/
 - better QP solver: primal-dual interior point method 

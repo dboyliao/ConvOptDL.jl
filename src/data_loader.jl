@@ -8,7 +8,6 @@ struct FewShotDataLoader
     labels::AbstractArray{L,1} where {L}
     samples::AbstractArray
     label2Idices::Dict
-    dims_feature::Integer
 
     function FewShotDataLoader(path::String)
         data = deserialize(path)
@@ -25,8 +24,7 @@ struct FewShotDataLoader
             end
             push!(label2Idices[label], i)
         end
-        dims_feature = reduce((a, b) -> a * b, size(samples)[1:end-1])
-        new(labels, samples, label2Idices, dims_feature)
+        new(labels, samples, label2Idices)
     end
 end
 
@@ -44,10 +42,10 @@ struct MetaDataSample{T,L}
     support_k_shots::Integer
     query_n_ways::Integer
     query_k_shots::Integer
-    support_samples::AbstractArray{T,3}
-    support_labels::AbstractArray{L,2}
-    query_samples::AbstractArray{T,3}
-    query_labels::AbstractArray{L,2}
+    support_samples::AbstractArray{T}
+    support_labels::AbstractArray{L}
+    query_samples::AbstractArray{T}
+    query_labels::AbstractArray{L}
 end
 
 function MetaDataSample(;
@@ -64,15 +62,12 @@ function MetaDataSample(;
     @assert support_k_shots > 0 "support_k_shots must be positive: $support_k_shots"
     @assert query_n_ways > 0 "query_n_ways must be positive: $query_n_ways"
     @assert query_k_shots > 0 "query_k_shots must be positive: $query_k_shots"
-    @assert ndims(support_samples) >= 2 "support_samples must be at least 2-dim"
-    @assert ndims(query_samples) >= 2 "query_samples must be at least 2-dim"
+    @assert ndims(support_samples) >= 3 "support_samples must be at least 3-dim"
+    @assert ndims(query_samples) >= 3 "query_samples must be at least 3-dim"
+    @assert support_n_ways * support_k_shots == size(support_samples)[end-1]
+    @assert query_n_ways * query_k_shots == size(query_samples)[end-1]
     @assert size(support_samples) == size(query_samples) "size of support samples and query samples should be the same"
     n_tasks = size(support_samples)[end]
-    if ndims(support_samples) > 2
-        support_samples =
-            reshape(support_samples, :, support_n_ways * support_k_shots, n_tasks)
-        query_samples = reshape(query_samples, :, query_n_ways * query_k_shots, n_tasks)
-    end
     for i = 1:n_tasks
         support_label = support_labels[:, i]
         query_label = query_labels[:, i]
@@ -117,19 +112,15 @@ function _sample(
     train_idxs =
         sample(support_candidate_idxs, support_n_ways * support_k_shots, replace = false)
     test_idxs = sample(query_candidate_idxs, query_n_ways * query_k_shots, replace = false)
-    support_samples = reshape(
-        dloader.samples[repeat([:], ndims(dloader.samples) - 1)..., train_idxs],
-        dloader.dims_feature,
-        support_n_ways * support_k_shots,
-        1,
-    )
-    support_labels = Utils.add_dim(dloader.labels[train_idxs,])
-    query_samples = reshape(
-        dloader.samples[repeat([:], ndims(dloader.samples) - 1)..., test_idxs],
-        dloader.dims_feature,
-        query_n_ways * query_k_shots,
-        1,
-    )
+    support_samples = Utils.add_dim(dloader.samples[
+        repeat([:], ndims(dloader.samples) - 1)...,
+        train_idxs,
+    ])
+    support_labels = Utils.add_dim(dloader.labels[train_idxs])
+    query_samples = Utils.add_dim(dloader.samples[
+        repeat([:], ndims(dloader.samples) - 1)...,
+        test_idxs,
+    ])
     query_labels = Utils.add_dim(dloader.labels[test_idxs])
     return support_samples, support_labels, query_samples, query_labels
 end
@@ -185,14 +176,15 @@ function sample(
         push!(query_sets, query)
         push!(query_labels, query_label)
     end
+    ndim_sample = ndims(support_sets[1])
     MetaDataSample(
         support_n_ways = support_n_ways,
         support_k_shots = support_k_shots,
         query_n_ways = query_n_ways,
         query_k_shots = query_k_shots,
-        support_samples = cat(support_sets..., dims = Val(3)),
+        support_samples = cat(support_sets..., dims = Val(ndim_sample)),
         support_labels = cat(support_labels..., dims = Val(2)),
-        query_samples = cat(query_sets..., dims = Val(3)),
+        query_samples = cat(query_sets..., dims = Val(ndim_sample)),
         query_labels = cat(query_labels..., dims = Val(2)),
     )
 end
