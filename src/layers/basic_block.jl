@@ -33,7 +33,7 @@ function BasicBlock(
         BatchNorm(out_channel),
     ) :
         identity
-    drop_block = use_dropblock ? DropBlock(block_size, 1 - drop_prob) : Dropout(drop_prob)
+    drop_block = use_dropblock ? DropBlock(block_size, Float32(1 - drop_prob)) : Dropout(Float32(drop_prob))
     if drop_prob > 0
         Flux.trainmode!(drop_block)
     else
