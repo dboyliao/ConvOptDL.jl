@@ -53,11 +53,11 @@ end
 Flux.testmode!(m::BasicBlock, mode = true) = (
     map(
         x -> Flux.testmode!(x, mode),
-        (m.pre_block, m.downsample_block, m.post_block, m.drop_block),
+        (m.pre_block, m.downsample_block, m.drop_block),
     );
     m
 )
 
 Flux.functor(::Type{<:BasicBlock}, m) =
-    (m.pre_block, m.downsample_block, m.post_block, m.drop_block),
+    (m.pre_block, m.downsample_block, m.drop_block),
     blocks -> BasicBlock(blocks...)
