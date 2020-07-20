@@ -36,32 +36,29 @@ function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
         throw(ArgumentError("G and h should be both empty or not empty"))
     !(isempty(A) ⊻ isempty(b)) ||
         throw(ArgumentError("A and b should be both empty or not empty"))
+
     # solve qp and return x
     dim_x = size(Q, 1)
     x = Variable(dim_x)
     constraints = Dict{String,Constraint}()
-    if !isempty(A)
-        constraints["Eq"] = (A * x == b)
-    end
-    if !isempty(G)
-        constraints["InEq"] = (G * x ≤ h)
-    end
+
+    isempty(A) || constraints["Eq"] = (A * x == b)
+    isempty(G) || constraints["InEq"] = (G * x ≤ h)
+
     obj = 0.5 * quadform(x, Q) + p'x
     problem = minimize(obj, collect(values(constraints)))
-    if Sys.isunix()
-        stream_null = open("/dev/null", "w")
-    else
-        # assume windows
-        stream_null = open("nul", "w")
-    end
-    redirect_stdout(stream_null) do
-        redirect_stderr(stream_null) do
-            solve!(problem, optimizer; kwargs...)
+    null_dest = Sys.isunix() ? "/dev/null" : "nul" # assume windows
+    open(null_dest, "w") do stream_null
+        redirect_stdout(stream_null) do
+            redirect_stderr(stream_null) do
+                solve!(problem, optimizer; kwargs...)
+            end
         end
     end
-    close(stream_null)
-    @assert problem.status == Convex.MOI.OPTIMAL
+
+    @assert problem.status == Convex.MOI.OPTIMAL "Non-optimal solution is achieved"
     x_ = isa(x.value, AbstractArray) ? dropdims(x.value, dims = 2) : [x.value]
+
     if haskey(constraints, "InEq")
         cond_ineq = constraints["InEq"]
         λs_ = isa(cond_ineq.dual, AbstractArray) ? dropdims(cond_ineq.dual, dims = 2) :
@@ -69,6 +66,7 @@ function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
     else
         λs_ = similar(G, 0)
     end
+
     if haskey(constraints, "Eq")
         cond_eq = constraints["Eq"]
         νs_ = isa(cond_eq.dual, AbstractArray) ? dropdims(abs.(cond_eq.dual), dims = 2) :
@@ -122,13 +120,9 @@ function solve_qp_batch(
         A_ = @view A[:, :, i]
         b_ = @view b[:, i]
         x, λs_, νs_ = solve_qp(Q_, p_, G_, h_, A_, b_, optimizer)
-        X[:, i] .= x
-        if !isempty(λs_)
-            λs[:, i] .= λs_
-        end
-        if !isempty(νs_)
-            νs[:, i] .= νs_
-        end
+        view(X, :, i) .= x
+        isempty(λs_) || view(λs, :, i) .= λs_
+        isempty(νs_) || view(νs, :, i) .= νs_
     end
     return X, λs, νs
 end
@@ -175,12 +169,12 @@ function solve_qp_batch_with_back(
             λ_ = @view λs[:, i]
             x_ = @view X[:, i]
             dx, dλ, dν = solve_kkt(Q_, G_, h_, A_, λ_, x_, ΔX_)
-            ΔQ[:, :, i] .= 0.5 * (dx * x_' + x_ * dx') # dQ
-            Δp[:, i] .= dx # dp
-            ΔG[:, :, i] .= Diagonal(λ_) * (dλ * x_' + λ_ * dx') # dG
-            Δh[:, i] .= -Diagonal(λ_) * dλ # dh
-            ΔA[:, :, i] .= (dν * x_' + ν_ * dx') # dA
-            Δb[:, i] .= -dν # db
+            view(ΔQ, :, :, i) .= 0.5 * (dx * x_' + x_ * dx') # dQ
+            view(Δp, :, i) .= dx # dp
+            view(ΔG, :, :, i) .= Diagonal(λ_) * (dλ * x_' + λ_ * dx') # dG
+            view(Δh, :, i) .= -Diagonal(λ_) * dλ # dh
+            view(ΔA, :, :, i) .= (dν * x_' + ν_ * dx') # dA
+            view(Δb, :, i) .= -dν # db
         end
         Δoptimizer = nothing
         (ΔQ, Δp, ΔG, Δh, ΔA, Δb, Δoptimizer)
