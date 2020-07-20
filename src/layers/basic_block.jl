@@ -30,7 +30,7 @@ function ResNetBasicBlock(
         Chain(Conv((1, 1), in_channel => out_channel, stride = 1), BatchNorm(out_channel)) :
         identity
     post_block =
-        Chain((x) -> leakyrelu(x, Float32(0.1)), MaxPool((pool_stride, pool_stride), stride = pool_stride))
+        Chain((x) -> leakyrelu.(x, Float32(0.1)), MaxPool((pool_stride, pool_stride), stride = pool_stride))
     drop_block = DropBlock(block_size, 1 - drop_prob)
     if drop_prob > 0
         Flux.trainmode!(drop_block)
