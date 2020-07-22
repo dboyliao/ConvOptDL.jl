@@ -29,7 +29,10 @@ struct FewShotDataLoader
 end
 
 function Base.show(io::IO, dloader::FewShotDataLoader)
-    print(io, "FewShotDataLoader(sample:$(size(dloader.samples)), labels:$(typeof(dloader.labels)))")
+    print(
+        io,
+        "FewShotDataLoader(sample:$(size(dloader.samples)), labels:$(typeof(dloader.labels)))",
+    )
 end
 
 """
@@ -47,9 +50,24 @@ struct MetaDataSample{T,L}
     query_n_ways::Integer
     query_k_shots::Integer
     support_samples::AbstractArray{T}
-    support_labels::AbstractArray{L, 2}
+    support_labels::AbstractArray{L,2}
     query_samples::AbstractArray{T}
-    query_labels::AbstractArray{L, 2}
+    query_labels::AbstractArray{L,2}
+end
+
+function Base.show(io::IO, meta_sample::MetaDataSample)
+    print(
+        io,
+        "MetaDataSample(",
+        "support_n_ways: $(meta_sample.support_n_ways), ",
+        "support_k_shots: $(meta_sample.support_k_shots), ",
+        "query_n_ways: $(meta_sample.query_n_ways), ",
+        "query_k_shots: $(meta_sample.query_k_shots), ",
+        "support_samples: [$(eltype(meta_sample.support_samples))]$(size(meta_sample.support_samples)), ",
+        "support_labels: [$(eltype(meta_sample.support_labels))]$(size(meta_sample.support_labels)), ",
+        "query_samples: [$(eltype(meta_sample.query_samples))]$(size(meta_sample.query_samples)), ",
+        "query_labels: [$(eltype(meta_sample.query_labels))]$(size(meta_sample.query_labels)))",
+    )
 end
 
 function MetaDataSample(;
