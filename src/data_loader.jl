@@ -70,7 +70,7 @@ function MetaDataSample(;
     @assert ndims(query_samples) >= 3 "query_samples must be at least 3-dim"
     @assert support_n_ways * support_k_shots == size(support_samples)[end-1]
     @assert query_n_ways * query_k_shots == size(query_samples)[end-1]
-    @assert size(support_samples) == size(query_samples) "size of support samples and query samples should be the same"
+    @assert size(support_samples)[1:end-2] == size(query_samples)[1:end-2] "size of support samples and query samples should be the same"
     n_tasks = size(support_samples)[end]
     for i = 1:n_tasks
         support_label = support_labels[:, i]
