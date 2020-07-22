@@ -1,7 +1,7 @@
 export FewShotDataLoader
 
 using Serialization
-import Base: size
+import Base: size, show
 import StatsBase: sample, Weights
 
 struct FewShotDataLoader
@@ -28,13 +28,17 @@ struct FewShotDataLoader
     end
 end
 
+function Base.show(io::IO, dloader::FewShotDataLoader)
+    print(io, "FewShotDataLoader(sample:$(size(dloader.samples)), labels:$(typeof(dloader.labels)))")
+end
+
 """
 Fields
 ======
 
-`support_samples`: array of support samples with size (`feature_dim`, `num_support`, `num_tasks`)
+`support_samples`: array of support samples with size (`feature_size`..., `num_support`, `num_tasks`)
 `support_labels`: array of labels of support samples with size (`num_support`, `num_tasks`)
-`query_samples`: array of query samples with size (`feature_dim`, `num_query`, `num_tasks`)
+`query_samples`: array of query samples with size (`feature_size`..., `num_query`, `num_tasks`)
 `query_labels`: array of labels of query samples with size (`num_query`, `num_tasks`)
 """
 struct MetaDataSample{T,L}
@@ -43,9 +47,9 @@ struct MetaDataSample{T,L}
     query_n_ways::Integer
     query_k_shots::Integer
     support_samples::AbstractArray{T}
-    support_labels::AbstractArray{L}
+    support_labels::AbstractArray{L, 2}
     query_samples::AbstractArray{T}
-    query_labels::AbstractArray{L}
+    query_labels::AbstractArray{L, 2}
 end
 
 function MetaDataSample(;
