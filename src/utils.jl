@@ -1,6 +1,6 @@
 module Utils
 
-export batched_outer, batched_kronecker, add_dim
+export batched_outer, batched_kronecker, add_dim, gram_matrix
 
 using Flux
 
@@ -59,5 +59,22 @@ add_dim(x::AbstractArray{T, N}) where {T, N} = reshape(x, Val(N+1))
 return C: (m, n, batch)
 """
 gram_matrix(A, B) = Flux.batched_mul(permutedims(A, (2, 1, 3)), B)
+
+"""
+`labels`: (m, batch)
+"""
+function onehot(labels)
+    num_batch = size(labels, 2)
+    encoded = []
+    for i in 1:num_batch
+        uniq_label = unique(labels[:, i])
+        encoder(l) = Flux.onehot(l, uniq_label)
+        push!(
+            encoded,
+            vcat(encoder.(labels[:, i])...)
+        )
+    end
+    hcat(encoded...)
+end
 
 end
