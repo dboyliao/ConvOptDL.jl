@@ -1,6 +1,7 @@
 export FewShotDataLoader
 
 using Serialization
+using Random: shuffle!
 import Base: size, show
 import StatsBase: sample, Weights
 
@@ -127,23 +128,31 @@ function _sample(
     weight_vs[idxs] .= 0
     query_target_labels =
         sample(uniq_labels, Weights(weight_vs), query_n_ways, replace = false)
-    support_candidate_idxs =
-        vcat([dloader.label2Idices[label] for label in support_target_labels]...)
-    query_candidate_idxs =
-        vcat([dloader.label2Idices[label] for label in query_target_labels]...)
-    train_idxs =
-        sample(support_candidate_idxs, support_n_ways * support_k_shots, replace = false)
-    test_idxs = sample(query_candidate_idxs, query_n_ways * query_k_shots, replace = false)
+    support_idxs = []
+    for label in support_target_labels
+        for idx in sample(dloader.label2Idices[label], support_k_shots)
+            push!(support_idxs, idx)
+        end
+    end
+    shuffle!(support_idxs)
     support_samples = Utils.add_dim(dloader.samples[
         repeat([:], ndims(dloader.samples) - 1)...,
-        train_idxs,
+        support_idxs,
     ])
-    support_labels = Utils.add_dim(dloader.labels[train_idxs])
+    support_labels = Utils.add_dim(dloader.labels[support_idxs])
+
+    query_idxs = []
+    for label in query_target_labels
+        for idx in sample(dloader.label2Idices[label], query_k_shots)
+            push!(query_idxs, idx)
+        end
+    end
+    shuffle!(query_idxs)
     query_samples = Utils.add_dim(dloader.samples[
         repeat([:], ndims(dloader.samples) - 1)...,
-        test_idxs,
+        query_idxs,
     ])
-    query_labels = Utils.add_dim(dloader.labels[test_idxs])
+    query_labels = Utils.add_dim(dloader.labels[query_idxs])
     return support_samples, support_labels, query_samples, query_labels
 end
 
