@@ -34,7 +34,7 @@ function crammer_svm(model, batch::MetaDataSample; C_reg = 0.1)
     n_support = batch.support_n_ways * batch.support_k_shots
     # `labels_support`: array of shape (`n_ways`*`k_shots`, `tasks_per_batch`)
     # `embed_support`: (`feat_dim`, `n_ways`*`k_shots`, `num_tasks`)
-    embed_support = embed(model, batch, support=Val(true))
+    embed_support = embed(model, batch, supports=Val(true))
     # construct dual QP problem: finding Q, p, G, h, A, b
     # (`n_ways`*`k_shots`, `n_ways`*`k_shots`, `num_tasks`)
     kernel_mat = Utils.gram_matrix(embed_support, embed_support)
