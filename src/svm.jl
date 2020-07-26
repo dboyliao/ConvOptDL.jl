@@ -4,38 +4,22 @@ using Flux
 using LinearAlgebra
 import SCS
 
-_format_batch(batch) = reshape(Float32.(batch), size(batch)[1:end-2]..., :)
-embed(model, batch::MetaDataSample, supports::Val{true}) = reshape(
-    model(_format_batch(batch.support_samples)),
-    :,
-    batch.support_n_ways*batch.support_k_shots,
-    size(batch)
-)
-embed(model, batch::MetaDataSample, supports::Val{false}) = reshape(
-    model(_format_batch(batch.query_samples)),
-    :,
-    batch.query_n_ways*batch.query_k_shots,
-    size(batch)
-)
-embed(model, batch; supports=Val(true)) = embed(model, batch, supports)
 
 """
 Implement multi-class kernel-based SVM
 
 # Inputs
 
-- `batch`(::MetaDataSample) 
+- `embed_support`: (`feat_dim`, `n_ways`*`k_shots`, `num_tasks`)
+- `batch :: MetaDataSample`
 
 # References
 
 - http://jmlr.csail.mit.edu/papers/volume2/crammer01a/crammer01a.pdf
 """
-function crammer_svm(model, batch::MetaDataSample; C_reg = Float32(0.1))
+function crammer_svm(embed_support, batch::MetaDataSample; C_reg = Float32(0.1))
     # reshape (m, n, c, num_samples, num_tasks) to (m, n, c, num_samples * num_tasks)
     n_support = batch.support_n_ways * batch.support_k_shots
-    # `labels_support`: array of shape (`n_ways`*`k_shots`, `tasks_per_batch`)
-    # `embed_support`: (`feat_dim`, `n_ways`*`k_shots`, `num_tasks`)
-    embed_support = embed(model, batch, supports=Val(true))
     # construct dual QP problem: finding Q, p, G, h, A, b
     # (`n_ways`*`k_shots`, `n_ways`*`k_shots`, `num_tasks`)
     kernel_mat = Utils.gram_matrix(embed_support, embed_support)
@@ -64,5 +48,5 @@ function crammer_svm(model, batch::MetaDataSample; C_reg = Float32(0.1))
         ones(Float32, 1, batch.support_n_ways, size(batch)),
     )
     b = zeros(Float32, n_support, size(batch))
-    return embed_support, Q, p, G, h, A, b
+    return Q, p, G, h, A, b
 end
