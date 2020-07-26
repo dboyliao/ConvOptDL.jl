@@ -30,7 +30,7 @@ Implement multi-class kernel-based SVM
 
 - http://jmlr.csail.mit.edu/papers/volume2/crammer01a/crammer01a.pdf
 """
-function crammer_svm(model, batch::MetaDataSample; C_reg = 0.1)
+function crammer_svm(model, batch::MetaDataSample; C_reg = Float32(0.1))
     # reshape (m, n, c, num_samples, num_tasks) to (m, n, c, num_samples * num_tasks)
     n_support = batch.support_n_ways * batch.support_k_shots
     # `labels_support`: array of shape (`n_ways`*`k_shots`, `tasks_per_batch`)
@@ -46,7 +46,7 @@ function crammer_svm(model, batch::MetaDataSample; C_reg = 0.1)
             outer = (1, 1, size(batch)),
         ),
     )
-    p = -1 * Utils.onehot(batch.support_labels)
+    p = Float32.(-1 * Utils.onehot(batch.support_labels))
 
     support_labels_onehot = Utils.onehot(batch.support_labels)
     G = repeat(
