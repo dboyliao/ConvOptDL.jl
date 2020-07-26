@@ -5,18 +5,19 @@ using LinearAlgebra
 import SCS
 
 _format_batch(batch) = reshape(Float32.(batch), size(batch)[1:end-2]..., :)
-embed(model, batch::MetaDataSample; supports::Val{true}) = reshape(
+embed(model, batch::MetaDataSample, supports::Val{true}) = reshape(
     model(_format_batch(batch.support_samples)),
     :,
     batch.support_n_ways*batch.support_k_shots,
     size(batch)
 )
-embed(model, batch::MetaDataSample; supports::Val{false}) = reshape(
+embed(model, batch::MetaDataSample, supports::Val{false}) = reshape(
     model(_format_batch(batch.query_samples)),
     :,
     batch.query_n_ways*batch.query_k_shots,
     size(batch)
 )
+embed(model, batch; supports=Val(true)) = embed(model, batch, supports)
 
 """
 Implement multi-class kernel-based SVM
