@@ -8,6 +8,7 @@ function loss_log_softmax(logits, one_hot_vec) end
 _format_batch(batch) = reshape(Float32.(batch), size(batch)[1:end-2]..., :)
 
 function train!(loss, model, batch, opt)
+    # https://fluxml.ai/Flux.jl/stable/training/training/#Custom-Training-loops-1
     ps = Flux.params(model)
 
     local meta_loss
@@ -31,8 +32,9 @@ function train!(loss, model, batch, opt)
         # compatibility
         compatibility = ConvOptDL.Utils.gram_matrix(embed_query, embed_support)
         # smoothed onehot encoding
-        # meta_loss = ...
-        # return meta_loss
+        onehot_vec = ConvOptDL.Utils.onehot(batch.query_labels)
+        meta_loss = loss(compatibility, onehot_vec)
+        return meta_loss
     end
     update!(opt, ps, gs)
 end
@@ -42,6 +44,5 @@ if nameof(@__MODULE__) == :Main
     dloader = FewShotDataLoader("./test/test_data.jls")
     batch = sample(dloader, 8, support_n_ways = 5, support_k_shots = 5)
     opt = Flux.Optimise.Descent(0.1)
-    loss = Flux.Losses.crossentropy
-    train!(loss, model, batch, opt)
+    train!(loss_log_softmax, model, batch, opt)
 end
