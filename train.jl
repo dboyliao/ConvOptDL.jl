@@ -1,14 +1,14 @@
 using ConvOptDL
 using ConvOptDL.Utils
 using StatsBase
-using Flux: gradient, update!, softmax
 using LinearAlgebra: I
 using ArgParse
 using Serialization
 using Pipe: @pipe
+import Flux
 
 function loss_log_softmax(logits, one_hot_vec)
-    log_prob = log.(softmax(logits, dims = 1))
+    log_prob = log.(Flux.softmax(logits, dims = 1))
     loss = @pipe -(log_prob .* one_hot_vec) |> sum(_, dims = 1)
     mean(loss)
 end
@@ -72,12 +72,15 @@ function parse_opts()
     @add_arg_table! s begin
         "--batch-size"
         arg_type = Int64
+        meta_var = "INT"
         default = 8
         "--batches-per-episode"
         arg_type = Int64
+        meta_var = "INT"
         default = 200
         "--num-episodes"
         arg_type = Int64
+        meta_var = "INT"
         default = 50
         "-o"
         arg_type = String
