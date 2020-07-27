@@ -93,7 +93,7 @@ end
 if nameof(@__MODULE__) == :Main
     args = parse_opts()
     batch_size = args["batch-size"]
-    batches_per_episode = args["batch-per-episode"]
+    batches_per_episode = args["batches-per-episode"]
     num_episodes = args["num-episodes"]
     data_file = args["data_file"]
     out_model_file = args["o"]
