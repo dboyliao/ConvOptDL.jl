@@ -1,4 +1,4 @@
-export crammer_svm, embed
+export crammer_svm
 
 using Flux
 using LinearAlgebra
@@ -29,9 +29,6 @@ function crammer_svm(embed_support, batch::MetaDataSample; C_reg = Float32(0.1))
             Array{Float32}(I, batch.support_n_ways, batch.support_n_ways),
             outer = (1, 1, size(batch)),
         ),
-    ) + repeat(
-        Array{Float32}(I, batch.support_n_ways*n_support, batch.support_n_ways*n_support),
-        outer=(1, 1, size(batch))
     )
     p = Float32.(-1 * Utils.onehot(batch.support_labels))
 

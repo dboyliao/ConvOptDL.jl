@@ -4,7 +4,7 @@ authors = ["dboyliao <qmalliao@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
-BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
 Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"

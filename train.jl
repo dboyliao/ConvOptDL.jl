@@ -2,6 +2,9 @@ using ConvOptDL
 using ConvOptDL.Utils
 using StatsBase
 using Flux: gradient, update!
+using LinearAlgebra: I
+using ArgParse
+using Serialization
 
 function loss_log_softmax(logits, one_hot_vec) end
 
@@ -27,6 +30,14 @@ function train!(loss, model, batch, opt)
             size(batch),
         )
         Q, p, G, h, A, b = crammer_svm(embed_support, batch)
+        Q += repeat(
+            Array{Float32}(
+                I,
+                batch.support_n_ways * n_support,
+                batch.support_n_ways * n_support,
+            ),
+            outer = (1, 1, size(batch)),
+        )
         # solve QP
         sol = solve_qp_batch(Q, p, G, h, A, b)
         # compatibility
@@ -37,12 +48,47 @@ function train!(loss, model, batch, opt)
         return meta_loss
     end
     update!(opt, ps, gs)
+    return meta_loss
+end
+
+function parse_opts()
+    s = ArgParseSettings("Meta Convex Optimization Learning training")
+    @add_arg_table! s begin
+        "--batch-size"
+        arg_type = Int64
+        default = 8
+        "--batches-per-episode"
+        arg_type = Int64
+        default = 200
+        "--num-episodes"
+        arg_type = Int64
+        default = 50
+        "-o"
+        arg_type = String
+        default = "model.jls"
+        "data_file"
+        arg_type = String
+        default = "./test/test_data.jls"
+    end
+    args = parse_args(s)
+    return args
 end
 
 if nameof(@__MODULE__) == :Main
+    args = parse_opts()
+    batch_size = args["batch-size"]
+    batches_per_episode = args["batch-per-episode"]
+    num_episodes = args["num-episodes"]
+    data_file = args["data_file"]
+    out_model_file = args["o"]
     model = resnet12()
-    dloader = FewShotDataLoader("./test/test_data.jls")
-    batch = sample(dloader, 8, support_n_ways = 5, support_k_shots = 5)
+    dloader = FewShotDataLoader(data_file)
     opt = Flux.Optimise.Descent(0.1)
-    train!(loss_log_softmax, model, batch, opt)
+    for episode in 1:num_episodes
+        for i in 1:batches_per_episode
+            batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 5)
+            train!(loss_log_softmax, model, batch, opt)
+        end
+    end
+    serialize(out_model_file, model)
 end
