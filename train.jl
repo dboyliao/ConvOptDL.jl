@@ -18,6 +18,10 @@ _format_batch(batch) = reshape(Float32.(batch), size(batch)[1:end-2]..., :)
 function train!(loss, model, batch, opt)
     # https://fluxml.ai/Flux.jl/stable/training/training/#Custom-Training-loops-1
     ps = Flux.params(model)
+    # smoothed onehot encoding
+    query_onehot = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
+          reshape(_, batch.support_n_ways, :) |>
+          _ .* (1 - 5f-2) .+ 5f-2 * (1 .- _) ./ (batch.support_n_ways - 1f0)
 
     local meta_loss
     gs = Flux.gradient(ps) do
@@ -57,11 +61,7 @@ function train!(loss, model, batch, opt)
               sum(_, dims = 2) |>
               dropdims(_, dims = 2) |>
               reshape(_, batch.support_n_ways, :)
-        # smoothed onehot encoding
-        onehot_vec = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
-              reshape(_, batch.support_n_ways, :) |>
-              _ .* (1 - 5f-2) .+ 5f-2 * (1 .- _) ./ (batch.support_n_ways-1f0)
-        meta_loss = loss(logits, onehot_vec)
+        meta_loss = loss(logits, query_onehot)
         return meta_loss
     end
     update!(opt, ps, gs)
