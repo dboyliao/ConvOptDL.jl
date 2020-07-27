@@ -23,7 +23,7 @@ function train!(loss, model, batch, opt)
     query_onehot = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
           reshape(_, batch.support_n_ways, :) |>
           _ .* (1 - 5f-2) .+ 5f-2 * (1 .- _) ./ (batch.support_n_ways - 1f0)
-    support_onehot = Utils.onehot(batch.support_labels)
+    support_onehot = ConvOptDL.Utils.onehot(batch.support_labels)
 
     local meta_loss
     gs = Flux.gradient(ps) do

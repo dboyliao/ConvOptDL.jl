@@ -17,7 +17,7 @@ Implement multi-class kernel-based SVM
 
 - http://jmlr.csail.mit.edu/papers/volume2/crammer01a/crammer01a.pdf
 """
-function crammer_svm(embed_support, support_labels_onehot, batch::MetaDataSample; C_reg = Float32(0.1))
+function crammer_svm(embed_support, support_onehot, batch::MetaDataSample; C_reg = Float32(0.1))
     # reshape (m, n, c, num_samples, num_tasks) to (m, n, c, num_samples * num_tasks)
     n_support = batch.support_n_ways * batch.support_k_shots
     # construct dual QP problem: finding Q, p, G, h, A, b
@@ -30,7 +30,7 @@ function crammer_svm(embed_support, support_labels_onehot, batch::MetaDataSample
             outer = (1, 1, size(batch)),
         ),
     )
-    p = Float32.(-1 * Utils.onehot(batch.support_labels))
+    p = Float32.(-1 * support_onehot)
     G = repeat(
         Array{Float32}(
             I,
@@ -39,7 +39,7 @@ function crammer_svm(embed_support, support_labels_onehot, batch::MetaDataSample
         ),
         outer = (1, 1, size(batch)),
     )
-    h = C_reg * support_labels_onehot
+    h = C_reg * support_onehot
 
     A = Utils.batched_kronecker(
         repeat(Array{Float32}(I, n_support, n_support), outer = (1, 1, size(batch))),
