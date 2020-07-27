@@ -8,8 +8,8 @@ using Serialization
 using Pipe: @pipe
 
 function loss_log_softmax(logits, one_hot_vec)
-    log_prob = log.(softmax(logits, dims=1))
-    loss = @pipe -(log_prob .* one_hot_vec) |> sum(_, dims=1)
+    log_prob = log.(softmax(logits, dims = 1))
+    loss = @pipe -(log_prob .* one_hot_vec) |> sum(_, dims = 1)
     mean(loss)
 end
 
@@ -57,11 +57,9 @@ function train!(loss, model, batch, opt)
               dropdims(_, dims = 2) |>
               reshape(_, batch.support_n_ways, :)
         # smoothed onehot encoding
-        onehot_vec =
-            ConvOptDL.Utils.onehot(batch.query_labels) |>
-            reshape(_, batch.support_n_ways, :)
-        onehot_vec =
-            onehot_vec * (1 - 5f-2) .+ (5f-2 * (1 - onehot_vec) / batch.support_n_ways)
+        onehot_vec = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
+              reshape(_, batch.support_n_ways, :) |>
+              (_ * (1 - 5f-2) .+ (5f-2 * (1 - _) / batch.support_n_ways))
         meta_loss = loss(logits, onehot_vec)
         return meta_loss
     end
