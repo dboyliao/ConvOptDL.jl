@@ -38,8 +38,8 @@ function train!(loss, model, batch, opt)
         Q += repeat(
             Array{Float32}(
                 I,
-                batch.support_n_ways * n_support,
-                batch.support_n_ways * n_support,
+                batch.support_n_ways * batch.n_support,
+                batch.support_n_ways * batch.n_support,
             ),
             outer = (1, 1, size(batch)),
         )
