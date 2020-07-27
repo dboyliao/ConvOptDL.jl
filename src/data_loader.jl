@@ -1,4 +1,4 @@
-export FewShotDataLoader
+export FewShotDataLoader, MetaDataSample
 
 using Serialization
 using Random: shuffle!
@@ -54,6 +54,15 @@ struct MetaDataSample{T,L}
     support_labels::AbstractArray{L,2}
     query_samples::AbstractArray{T}
     query_labels::AbstractArray{L,2}
+end
+
+function Base.getproperty(m::MetaDataSample, name::Symbol)
+    if name == :n_support
+        return m.support_k_shots * m.support_n_ways
+    elseif name == :n_query
+        return m.query_k_shots * m.query_n_ways
+    end
+    getfield(m, name)
 end
 
 function Base.show(io::IO, meta_sample::MetaDataSample)

@@ -1,12 +1,17 @@
 using ConvOptDL
 using ConvOptDL.Utils
 using StatsBase
-using Flux: gradient, update!
+using Flux: gradient, update!, softmax
 using LinearAlgebra: I
 using ArgParse
 using Serialization
+using Pipe: @pipe
 
-function loss_log_softmax(logits, one_hot_vec) end
+function loss_log_softmax(logits, one_hot_vec)
+    log_prob = log.(softmax(logits, dims=1))
+    loss = @pipe -(log_prob .* one_hot_vec) |> sum(_, dims=1)
+    mean(loss)
+end
 
 _format_batch(batch) = reshape(Float32.(batch), size(batch)[1:end-2]..., :)
 
@@ -18,15 +23,15 @@ function train!(loss, model, batch, opt)
     gs = Flux.gradient(ps) do
         # (`feat_dim`, `n_ways`*`k_shots`, `num_tasks`)
         embed_query = reshape(
-            model(_format_batch(batch.support_samples)),
-            :,
-            batch.support_n_ways * batch.support_k_shots,
-            size(batch),
-        )
-        embed_support = reshape(
             model(_format_batch(batch.query_samples)),
             :,
             batch.query_n_ways * batch.query_k_shots,
+            size(batch),
+        )
+        embed_support = reshape(
+            model(_format_batch(batch.support_samples)),
+            :,
+            batch.support_n_ways * batch.support_k_shots,
             size(batch),
         )
         Q, p, G, h, A, b = crammer_svm(embed_support, batch)
@@ -39,12 +44,25 @@ function train!(loss, model, batch, opt)
             outer = (1, 1, size(batch)),
         )
         # solve QP
-        sol = solve_qp_batch(Q, p, G, h, A, b)
-        # compatibility
-        compatibility = ConvOptDL.Utils.gram_matrix(embed_query, embed_support)
+        sol = @pipe solve_qp_batch(Q, p, G, h, A, b) |>
+              reshape(_, 1, batch.n_support, batch.support_n_ways, size(batch)) |>
+              repeat(_, outer = (batch.n_query, 1, 1, 1)) |>
+              permutedims(_, (3, 2, 1, 4))
+        # logits
+        logits = @pipe ConvOptDL.Utils.gram_matrix(embed_query, embed_support) |>
+              reshape(_, 1, size(_)...) |>
+              repeat(_, outer = (5, 1, 1, 1)) |>
+              .*(_, sol) |>
+              sum(_, dims = 2) |>
+              dropdims(_, dims = 2) |>
+              reshape(_, batch.support_n_ways, :)
         # smoothed onehot encoding
-        onehot_vec = ConvOptDL.Utils.onehot(batch.query_labels)
-        meta_loss = loss(compatibility, onehot_vec)
+        onehot_vec =
+            ConvOptDL.Utils.onehot(batch.query_labels) |>
+            reshape(_, batch.support_n_ways, :)
+        onehot_vec =
+            onehot_vec * (1 - 5f-2) .+ (5f-2 * (1 - onehot_vec) / batch.support_n_ways)
+        meta_loss = loss(logits, onehot_vec)
         return meta_loss
     end
     update!(opt, ps, gs)
@@ -84,10 +102,12 @@ if nameof(@__MODULE__) == :Main
     model = resnet12()
     dloader = FewShotDataLoader(data_file)
     opt = Flux.Optimise.Descent(0.1)
-    for episode in 1:num_episodes
-        for i in 1:batches_per_episode
+    meta_losses = []
+    for episode = 1:num_episodes
+        for i = 1:batches_per_episode
             batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 5)
-            train!(loss_log_softmax, model, batch, opt)
+            meta_loss = train!(loss_log_softmax, model, batch, opt)
+            push!(meta_losses, meta_loss)
         end
     end
     serialize(out_model_file, model)
