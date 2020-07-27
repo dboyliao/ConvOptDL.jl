@@ -60,7 +60,7 @@ function train!(loss, model, batch, opt)
         # smoothed onehot encoding
         onehot_vec = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
               reshape(_, batch.support_n_ways, :) |>
-              _ * (1 - 5f-2) .+ 5f-2 * (1 - _) / (batch.support_n_ways-1)
+              _ .* (1 - 5f-2) .+ 5f-2 * (1 .- _) ./ (batch.support_n_ways-1f0)
         meta_loss = loss(logits, onehot_vec)
         return meta_loss
     end
