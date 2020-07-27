@@ -72,15 +72,15 @@ function parse_opts()
     @add_arg_table! s begin
         "--batch-size"
         arg_type = Int64
-        meta_var = "INT"
+        metavar = "INT"
         default = 8
         "--batches-per-episode"
         arg_type = Int64
-        meta_var = "INT"
+        metavar = "INT"
         default = 200
         "--num-episodes"
         arg_type = Int64
-        meta_var = "INT"
+        metavar = "INT"
         default = 50
         "-o"
         arg_type = String
