@@ -5,6 +5,7 @@ using LinearAlgebra: I
 using ArgParse
 using Serialization
 using Pipe: @pipe
+using Flux: update!
 import Flux
 
 function loss_log_softmax(logits, one_hot_vec)
