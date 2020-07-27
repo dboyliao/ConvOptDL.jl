@@ -19,9 +19,11 @@ function train!(loss, model, batch, opt)
     # https://fluxml.ai/Flux.jl/stable/training/training/#Custom-Training-loops-1
     ps = Flux.params(model)
     # smoothed onehot encoding
+    # onehot is not differentiable, moving out of the do block
     query_onehot = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
           reshape(_, batch.support_n_ways, :) |>
           _ .* (1 - 5f-2) .+ 5f-2 * (1 .- _) ./ (batch.support_n_ways - 1f0)
+    support_onehot = Utils.onehot(batch.support_labels)
 
     local meta_loss
     gs = Flux.gradient(ps) do
@@ -38,7 +40,7 @@ function train!(loss, model, batch, opt)
             batch.support_n_ways * batch.support_k_shots,
             size(batch),
         )
-        Q, p, G, h, A, b = crammer_svm(embed_support, batch)
+        Q, p, G, h, A, b = crammer_svm(embed_support, support_onehot, batch)
         Q += repeat(
             Array{Float32}(
                 I,
