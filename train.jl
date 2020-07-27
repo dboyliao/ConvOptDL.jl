@@ -32,13 +32,13 @@ function train!(loss, model, batch, opt)
         embed_query = reshape(
             model(_format_batch(batch.query_samples)),
             :,
-            batch.query_n_ways * batch.query_k_shots,
+            batch.n_query,
             size(batch),
         )
         embed_support = reshape(
             model(_format_batch(batch.support_samples)),
             :,
-            batch.support_n_ways * batch.support_k_shots,
+            batch.n_support,
             size(batch),
         )
         Q, p, G, h, A, b = crammer_svm(embed_support, support_onehot, batch)
