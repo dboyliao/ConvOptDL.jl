@@ -44,7 +44,8 @@ function train!(loss, model, batch, opt)
             outer = (1, 1, size(batch)),
         )
         # solve QP
-        sol = @pipe solve_qp_batch(Q, p, G, h, A, b) |>
+        X, λ, ν = solve_qp_batch(Q, p, G, h, A, b)
+        α = @pipe X |>
               reshape(_, 1, batch.n_support, batch.support_n_ways, size(batch)) |>
               repeat(_, outer = (batch.n_query, 1, 1, 1)) |>
               permutedims(_, (3, 2, 1, 4))
@@ -52,14 +53,14 @@ function train!(loss, model, batch, opt)
         logits = @pipe ConvOptDL.Utils.gram_matrix(embed_query, embed_support) |>
               reshape(_, 1, size(_)...) |>
               repeat(_, outer = (5, 1, 1, 1)) |>
-              .*(_, sol) |>
+              _ .* α |>
               sum(_, dims = 2) |>
               dropdims(_, dims = 2) |>
               reshape(_, batch.support_n_ways, :)
         # smoothed onehot encoding
         onehot_vec = @pipe ConvOptDL.Utils.onehot(batch.query_labels) |>
               reshape(_, batch.support_n_ways, :) |>
-              (_ * (1 - 5f-2) .+ (5f-2 * (1 - _) / batch.support_n_ways))
+              _ * (1 - 5f-2) .+ 5f-2 * (1 - _) / (batch.support_n_ways-1)
         meta_loss = loss(logits, onehot_vec)
         return meta_loss
     end
