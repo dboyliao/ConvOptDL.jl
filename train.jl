@@ -120,12 +120,17 @@ if nameof(@__MODULE__) == :Main
     record = Dict()
     for episode = 1:num_episodes
         meta_losses = []
+        total_time = 0
         for i = 1:batches_per_episode
+            time_start = time()
             batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 5)
             meta_loss = train!(loss_log_softmax, model, batch, opt)
+            time_end = time()
             push!(meta_losses, meta_loss)
+            total_time += (time_end - time_start)
             if i % 100 == 0
                 println("mean meta loss: $(mean(meta_losses))")
+                println("average execution time: $(total_time / i)")
             end
         end
         record[episode] = meta_losses
