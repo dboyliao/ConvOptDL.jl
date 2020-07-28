@@ -136,7 +136,7 @@ if nameof(@__MODULE__) == :Main
             push!(meta_losses, meta_loss)
             total_time += (time_end - time_start)
             if i % log_period == 0
-                @info "[$(now())] last $(log_period) meta losses" meta_losses[end-log_period:end] mean(meta_losses)
+                @info "[$(now())] last $(log_period) meta losses" meta_losses[end-log_period+1:end] mean(meta_losses)
                 @info "[$(now())] average execution time" mean_exec_time = (total_time / i)
             end
         end
