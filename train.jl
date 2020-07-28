@@ -5,7 +5,7 @@ using LinearAlgebra: I
 using ArgParse
 using Serialization
 using Pipe: @pipe
-using Flux: update!
+using Flux: update!, trainmode!
 using Statistics: mean
 using Logging: @info
 using Dates: now
@@ -119,9 +119,10 @@ if nameof(@__MODULE__) == :Main
     out_model_file = args["o"]
     lr = args["learning-rate"]
     model_name, _ = splitext(out_model_file)
-    model = resnet12()
     dloader = FewShotDataLoader(data_file)
     opt = Flux.Optimise.Descent(lr)
+    model = resnet12()
+    trainmode!(model)
     record = Dict()
     for episode = 1:num_episodes
         @info "episode $(episode) start" now()
