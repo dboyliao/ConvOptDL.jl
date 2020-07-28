@@ -1,6 +1,6 @@
 # ConvOptDL
 
-This repo is WIP
+- Download the [data](https://drive.google.com/file/d/1Vd7br_DJGlaUEbKL0xLNXC0tAx9VuP2W/view?usp=sharing)
 
 # TODOs
 

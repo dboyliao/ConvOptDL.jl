@@ -104,16 +104,20 @@ if nameof(@__MODULE__) == :Main
     num_episodes = args["num-episodes"]
     data_file = args["data_file"]
     out_model_file = args["o"]
+    model_name, _ = splitext(out_model_file)
     model = resnet12()
     dloader = FewShotDataLoader(data_file)
     opt = Flux.Optimise.Descent(0.1)
-    meta_losses = []
+    record = Dict()
     for episode = 1:num_episodes
+        meta_losses = []
         for i = 1:batches_per_episode
             batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 5)
             meta_loss = train!(loss_log_softmax, model, batch, opt)
             push!(meta_losses, meta_loss)
         end
+        record[episode] = meta_losses
     end
+    serialize("train_$(model_name)_meta_losses.jls", record)
     serialize(out_model_file, model)
 end
