@@ -120,7 +120,7 @@ if nameof(@__MODULE__) == :Main
     lr = args["learning-rate"]
     model_name, _ = splitext(out_model_file)
     dloader = FewShotDataLoader(data_file)
-    opt = Flux.Optimise.ADAM(η = lr)
+    opt = Flux.Optimise.ADAM(lr)
     model = resnet12()
     trainmode!(model)
     record = Dict()
