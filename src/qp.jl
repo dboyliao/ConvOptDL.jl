@@ -42,8 +42,8 @@ function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
     x = Variable(dim_x)
     constraints = Dict{String,Constraint}()
 
-    isempty(A) || constraints["Eq"] = (A * x == b)
-    isempty(G) || constraints["InEq"] = (G * x ≤ h)
+    isempty(A) || (constraints["Eq"] = (A * x == b))
+    isempty(G) || (constraints["InEq"] = (G * x ≤ h))
 
     obj = 0.5 * quadform(x, Q) + p'x
     problem = minimize(obj, collect(values(constraints)))
@@ -120,8 +120,8 @@ function solve_qp_batch(
         b_ = @view b[:, i]
         x, λs_, νs_ = solve_qp(Q_, p_, G_, h_, A_, b_, optimizer)
         view(X, :, i) .= x
-        isempty(λs_) || view(λs, :, i) .= λs_
-        isempty(νs_) || view(νs, :, i) .= νs_
+        isempty(λs_) || (view(λs, :, i) .= λs_)
+        isempty(νs_) || (view(νs, :, i) .= νs_)
     end
     return X, λs, νs
 end
