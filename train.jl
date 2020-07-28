@@ -7,6 +7,8 @@ using Serialization
 using Pipe: @pipe
 using Flux: update!
 using Statistics: mean
+using Logging: @info
+using Dates: now
 import Flux
 
 function loss_log_softmax(logits, one_hot_vec)
@@ -84,7 +86,7 @@ function parse_opts()
         metavar = "INT"
         default = 200
         "--log-period"
-        help="print log for every given number of batches"
+        help = "print log for every given number of batches"
         arg_type = Int64
         metavar = "INT"
         default = 25
@@ -108,10 +110,7 @@ end
 
 if nameof(@__MODULE__) == :Main
     args = parse_opts()
-    println("Training Options:")
-    for (key, value) in args
-        println("$(key) := $(value)")
-    end
+    @info "Training Options: " args
     batch_size = args["batch-size"]
     batches_per_episode = args["batches-per-episode"]
     log_period = args["log-period"]
@@ -125,6 +124,7 @@ if nameof(@__MODULE__) == :Main
     opt = Flux.Optimise.Descent(lr)
     record = Dict()
     for episode = 1:num_episodes
+        @info "episode $(episode) start" now()
         meta_losses = []
         total_time = 0
         for i = 1:batches_per_episode
@@ -135,10 +135,11 @@ if nameof(@__MODULE__) == :Main
             push!(meta_losses, meta_loss)
             total_time += (time_end - time_start)
             if i % log_period == 0
-                println("mean meta loss: $(mean(meta_losses))")
-                println("average execution time: $(total_time / i)")
+                @info "[$(now())] meta loss" meta_losses mean(meta_losses)
+                @info "[$(now())] average execution time" mean_exec_time = (total_time / i)
             end
         end
+        @info "episode $(episode) end" now()
         record[episode] = meta_losses
         serialize("train_$(model_name)_meta_losses_$(episode).jls", meta_losses)
     end
