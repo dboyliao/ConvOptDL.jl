@@ -6,6 +6,7 @@ using ArgParse
 using Serialization
 using Pipe: @pipe
 using Flux: update!
+using Statistics: mean
 import Flux
 
 function loss_log_softmax(logits, one_hot_vec)
@@ -86,6 +87,9 @@ function parse_opts()
         arg_type = Int64
         metavar = "INT"
         default = 50
+        "--learning-rate"
+        arg_type = Float32
+        default = 1f-1
         "-o"
         arg_type = String
         default = "model.jls"
@@ -99,15 +103,20 @@ end
 
 if nameof(@__MODULE__) == :Main
     args = parse_opts()
+    println("Training Options:")
+    for (key, value) in args
+        println("$(key) := $(value)")
+    end
     batch_size = args["batch-size"]
     batches_per_episode = args["batches-per-episode"]
     num_episodes = args["num-episodes"]
     data_file = args["data_file"]
     out_model_file = args["o"]
+    lr = args["learning-rate"]
     model_name, _ = splitext(out_model_file)
     model = resnet12()
     dloader = FewShotDataLoader(data_file)
-    opt = Flux.Optimise.Descent(0.1)
+    opt = Flux.Optimise.Descent(lr)
     record = Dict()
     for episode = 1:num_episodes
         meta_losses = []
@@ -115,6 +124,9 @@ if nameof(@__MODULE__) == :Main
             batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 5)
             meta_loss = train!(loss_log_softmax, model, batch, opt)
             push!(meta_losses, meta_loss)
+            if i % 100 == 0
+                println("mean meta loss: $(mean(meta_losses))")
+            end
         end
         record[episode] = meta_losses
         serialize("train_$(model_name)_meta_losses_$(episode).jls", meta_losses)
