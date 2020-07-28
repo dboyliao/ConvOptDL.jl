@@ -117,7 +117,8 @@ if nameof(@__MODULE__) == :Main
             push!(meta_losses, meta_loss)
         end
         record[episode] = meta_losses
+        serialize("train_$(model_name)_meta_losses_$(episode).jls", meta_losses)
     end
-    serialize("train_$(model_name)_meta_losses.jls", record)
+    serialize("all_train_$(model_name)_meta_losses.jls", record)
     serialize(out_model_file, model)
 end
