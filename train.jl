@@ -83,6 +83,11 @@ function parse_opts()
         arg_type = Int64
         metavar = "INT"
         default = 200
+        "--log-period"
+        help="print log for every given number of batches"
+        arg_type = Int64
+        metavar = "INT"
+        default = 25
         "--num-episodes"
         arg_type = Int64
         metavar = "INT"
@@ -109,6 +114,7 @@ if nameof(@__MODULE__) == :Main
     end
     batch_size = args["batch-size"]
     batches_per_episode = args["batches-per-episode"]
+    log_period = args["log-period"]
     num_episodes = args["num-episodes"]
     data_file = args["data_file"]
     out_model_file = args["o"]
@@ -128,7 +134,7 @@ if nameof(@__MODULE__) == :Main
             time_end = time()
             push!(meta_losses, meta_loss)
             total_time += (time_end - time_start)
-            if i % 100 == 0
+            if i % log_period == 0
                 println("mean meta loss: $(mean(meta_losses))")
                 println("average execution time: $(total_time / i)")
             end
