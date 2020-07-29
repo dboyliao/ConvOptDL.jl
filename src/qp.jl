@@ -55,7 +55,7 @@ function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
             end
         end
     end
-    problem.status == Convex.MOI.OPTIMAL || println("Non optimal status: $(problem.status)")
+    # problem.status == Convex.MOI.OPTIMAL || @warn "Non optimal status: $(problem.status)"
     x_ = isa(x.value, AbstractArray) ? dropdims(x.value, dims = 2) : [x.value]
 
     if haskey(constraints, "InEq")
