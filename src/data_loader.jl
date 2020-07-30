@@ -2,8 +2,8 @@ export FewShotDataLoader, MetaDataSample
 
 using Serialization
 using Random: shuffle!
-import Base: size, show
-import StatsBase: sample, Weights
+import StatsBase
+import Base
 
 struct FewShotDataLoader
     labels::AbstractArray{L,1} where {L}
@@ -117,7 +117,7 @@ function MetaDataSample(;
     )
 end
 
-function size(meta_data_sample::MetaDataSample)
+function Base.size(meta_data_sample::MetaDataSample)
     return size(meta_data_sample.support_samples)[end]
 end
 
@@ -131,15 +131,19 @@ function _sample(
     # find exclusive train/test samples
     uniq_labels = unique(dloader.labels)
     idx_map = Dict([(k, i) for (i, k) in enumerate(uniq_labels)])
-    support_target_labels = sample(uniq_labels, support_n_ways, replace = false)
+    support_target_labels = StatsBase.sample(uniq_labels, support_n_ways, replace = false)
     idxs = [idx_map[label] for label in support_target_labels]
     weight_vs = ones(size(uniq_labels, 1))
     weight_vs[idxs] .= 0
-    query_target_labels =
-        sample(uniq_labels, Weights(weight_vs), query_n_ways, replace = false)
+    query_target_labels = StatsBase.sample(
+        uniq_labels,
+        StatsBase.Weights(weight_vs),
+        query_n_ways,
+        replace = false,
+    )
     support_idxs = []
     for label in support_target_labels
-        for idx in sample(dloader.label2Idices[label], support_k_shots)
+        for idx in StatsBase.sample(dloader.label2Idices[label], support_k_shots)
             push!(support_idxs, idx)
         end
     end
@@ -152,7 +156,7 @@ function _sample(
 
     query_idxs = []
     for label in query_target_labels
-        for idx in sample(dloader.label2Idices[label], query_k_shots)
+        for idx in StatsBase.sample(dloader.label2Idices[label], query_k_shots)
             push!(query_idxs, idx)
         end
     end
@@ -165,7 +169,7 @@ function _sample(
     return support_samples, support_labels, query_samples, query_labels
 end
 
-function sample(
+function StatsBase.sample(
     dloader::FewShotDataLoader;
     support_n_ways = 2,
     support_k_shots = 5,
@@ -191,7 +195,7 @@ function sample(
     )
 end
 
-function sample(
+function StatsBase.sample(
     dloader::FewShotDataLoader,
     n_tasks::Integer;
     support_n_ways = 2,
