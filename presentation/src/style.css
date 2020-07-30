@@ -59,19 +59,7 @@
 }
 
 html {
-  font-size: 12px;
-}
-
-@media screen and (min-width: 32rem) and (max-width: 48rem) {
-  html {
-    font-size: 15px;
-  }
-}
-
-@media screen and (min-width: 48rem) {
-  html {
-    font-size: 16px;
-  }
+  font-size: 14px;
 }
 
 body {
@@ -80,18 +68,15 @@ body {
 
 p,
 .splendor-p {
-  font-size: 1rem;
+  font-size: 1.2rem;
   margin-bottom: 1.3rem;
 }
 
+
 h1,
-.splendor-h1,
 h2,
-.splendor-h2,
 h3,
-.splendor-h3,
-h4,
-.splendor-h4 {
+h4 {
   margin: 1.414rem 0 .5rem;
   font-weight: inherit;
   line-height: 1.42;
@@ -148,7 +133,7 @@ textarea {
 @import url(http://fonts.googleapis.com/css?family=Merriweather:300italic,300);
 
 html {
-  font-size: 18px;
+  font-size: 20px;
   max-width: 100%;
 }
 
@@ -161,15 +146,15 @@ body {
 
 /* === A bit of a gross hack so we can have bleeding divs/blockquotes. */
 
-p,
+/* p,
 *:not(div):not(img):not(body):not(html):not(li):not(blockquote):not(p) {
   margin: 1rem auto 1rem;
   max-width: 36rem;
   padding: .25rem;
-}
+} */
 
 div {
-  width: 100%;
+  width: 95%;
 }
 
 div img {
@@ -184,13 +169,16 @@ blockquote p {
 }
 
 li {
+  font-size: 1rem;
   margin-left: 2rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 /* Counteract the specificity of the gross *:not() chain. */
 
 h1 {
-  padding: 4rem 0 !important;
+  padding: 2rem 0 !important;
 }
 
 /*  === End gross hack */
