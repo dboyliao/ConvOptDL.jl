@@ -193,6 +193,9 @@ pre,
 code {
   font-family: Menlo, Monaco, "Courier New", monospace;
 }
+code {
+  color: #d2b67b;
+}
 
 pre {
   background-color: #fafafa;

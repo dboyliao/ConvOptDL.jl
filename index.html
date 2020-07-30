@@ -97,7 +97,7 @@ slides: [https://dboyliao.github.io/ConvOptDL.jl](https://dboyliao.github.io/Con
       * [MetaOptNet](#meta-opt-net)
   * [Wait! SVM in Loss Function?](#conv-opt-meta)
   * [Implementation](#impl)
-  * [After Thoughts](#why-im-fucked)
+  * [Learning and Afterthoughts](#why-im-fucked)
 
 
 ---
@@ -179,7 +179,7 @@ Do:
 
 
 1. Draw $({}\_iD\_{train}^{meta\-train}, {}\_iD^{meta\-train}\_{test}) \in \mathcal{D}^{meta\-train}$
-2. Finding the optimal $\theta^*(\phi, {}\_{i}D\_{train}^{meta\-train})$ value for base learner with loss $\mathcal{L}(\theta; \phi, {}\_iD_{train}^{meta-train})$
+2. Finding the optimal $\theta^*$ value for base learner with loss $\mathcal{L}(\theta; \phi, {}\_iD_{train}^{meta-train})$
 3. Compute meta loass, $\mathcal{L}^{meta}(\phi, \theta^*(\phi); {}\_iD^{meta-train}_{test})$
 4. Update $\phi$:  $\phi \leftarrow \phi - \eta \triangledown\_{\phi}\mathcal{L}^{meta}(\phi, \theta^*(\phi); {}\_iD^\{meta-train\}_{test})$
 
@@ -384,7 +384,7 @@ name: impl
 ## Data Preprocessing
 
 
-  * `data_loader.jl`
+  * [`data_loader.jl`](https://github.com/dboyliao/ConvOptDL.jl/blob/master/src/data_loader.jl)
   * Extending `sample` from `StatsBase`
   * **Multiple dispatching** make it really easy to extend existing library
 
@@ -402,7 +402,7 @@ name: impl
 ## Differntiable QP Solver
 
 
-  * `qp.jl`
+  * [`qp.jl`](https://github.com/dboyliao/ConvOptDL.jl/blob/master/src/qp.jl)
   * Solve the QP with `Convex.jl`, which has nice API and comply to `MathOptInterface`
   * Define backward gradient with `Zygote.@adjoint` even the solver itself is not differentiable
   * Just like `torch.nn.Module.backward`
@@ -479,7 +479,7 @@ name: why-im-fucked
 
 
 
-## After Thoughts
+## Learning and Afterthoughts
 
 
   * Implementaion differences between `Convex.jl` and `cvxpy`
@@ -487,6 +487,7 @@ name: why-im-fucked
   * GPU support for batch QP solver and backward gradient function
   * Check my custom `Flux` layer
   * Some common utility functions are not yet supported in `Flux` and it took me more time than I expected in implementation
+  * Memory layout: row major $\rarr$ column major
 
 
 --
