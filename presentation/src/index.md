@@ -6,7 +6,7 @@
 by [`Dboy Liao`](https://github.com/dboyliao)
 </div>
 
-slides: [https://dboyliao.github.io/ConvOptDL.jl/index.html](https://dboyliao.github.io/ConvOptDL.jl/index.html)
+slides: [https://dboyliao.github.io/ConvOptDL.jl](https://dboyliao.github.io/ConvOptDL.jl)
 
 ---
 
@@ -96,7 +96,7 @@ name: meta-deep-learning
 ## Meta Training
 
 Given:
-- A meta learer $f_{\phi}$
+- A meta learner $f_{\phi}$
 - A base learner $g_{\theta}$
 
 Do:
