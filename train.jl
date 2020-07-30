@@ -45,14 +45,6 @@ function train!(loss, model, batch, opt)
             size(batch),
         )
         Q, p, G, h, A, b = crammer_svm(embed_support, support_onehot, batch)
-        Q += repeat(
-            Array{Float32}(
-                I,
-                batch.support_n_ways * batch.n_support,
-                batch.support_n_ways * batch.n_support,
-            ),
-            outer = (1, 1, size(batch)),
-        )
         # solve QP
         X, λ, ν = solve_qp_batch(Q, p, G, h, A, b)
         α = @pipe X |>
