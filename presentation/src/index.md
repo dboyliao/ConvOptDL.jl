@@ -292,3 +292,14 @@ Errr.....
 name: why-im-fucked
 ## After Thoughts
 
+- Implementaion differences between `Convex.jl` and `cvxpy`
+- More gradient check for the $\text{QPSolver}$
+- GPU support for batch QP solver and backward gradient function
+- Check my custom `Flux` layer
+- Some common utility functions are not yet supported in `Flux` and it took me more time than I expected in implementation
+
+--
+
+It's really easy to integrate different libraries in Julia.
+
+However, comparing with other machine learning community such as Python, it's not as easy as it seem to get things work.
