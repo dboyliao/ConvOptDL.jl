@@ -18,6 +18,9 @@
 <br/> <br/> <div style="font-size: 30px; "> by [`Dboy Liao`](https://github.com/dboyliao) </div>
 
 
+slides: [https://dboyliao.github.io/ConvOptDL.jl/index.html](https://dboyliao.github.io/ConvOptDL.jl/index.html)
+
+
 ---
 
 
@@ -434,13 +437,36 @@ name: impl
 ## Experiments
 
 
-  * Finally my training script is working
+  * Finally my training script is running
 
 
 --
 
 
-<div style="margin-left: 60px; font-size: 32px;"> But the model is not working ... </div>
+<div style="margin-left: 60px; font-size: 32px;"> But the model is not working ... (with simple <code class="remark-inline-code">SGD</code>) </div>
+
+
+<img alt="meta-loss" src="assets/meta_loss.png" style="width: 800px;">
+
+
+---
+
+
+
+
+## Experiments
+
+
+  * Let's use `ADAM`!
+
+
+--
+
+
+Errr.....
+
+
+<img alt="non-symm-mat" src="assets/non-symm-mat.png" style="width: 1000px;">
 
 
 ---
@@ -454,6 +480,22 @@ name: why-im-fucked
 
 
 ## After Thoughts
+
+
+  * Implementaion differences between `Convex.jl` and `cvxpy`
+  * More gradient check for the $\text{QPSolver}$
+  * GPU support for batch QP solver and backward gradient function
+  * Check my custom `Flux` layer
+  * Some common utility functions are not yet supported in `Flux` and it took me more time than I expected in implementation
+
+
+--
+
+
+It's really easy to integrate different libraries in Julia.
+
+
+However, comparing with other machine learning community such as Python, it's not as easy as it seem to get things work.
 
     </textarea>
 
