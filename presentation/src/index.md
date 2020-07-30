@@ -10,15 +10,37 @@ by [`Dboy Liao`](https://github.com/dboyliao)
 
 ## About Me
 
+- My real name is Yin-Chen Liao but all my friends call me Dboy
+    - [GitHub](https://github.com/dboyliao)
+    - [Linkedin](https://www.linkedin.com/in/yin-chen-liao-69967188/)
+- Core Developer of [`uTensor`](https://utensor.github.io/website/) project
+    - Author of [`utensor_cgen`](https://github.com/uTensor/utensor_cgen), code generator for `uTensor`
+    - Contributor to `uTensor` C++ runtime
+
+---
+
+## About Me
+
 - Interested in
     - Scientific Computing
     - Optimization
     - Machine Learning & Deep Learning
 - Freelancer
-    - get a bunch of time hacking
+    - Got a bunch of time **hacking**
 --
 
-- That's why I'm here!
+<div style="margin-left: 60px; font-size: 32px;">
+That's why I'm here!
+</div>
+
+---
+
+## About The Talk
+
+- My one month challenge
+    - Try to reproduce a deep learining paper with Julia
+    - Writing my very first Julia package
+    - IN ONE MONTH
 
 ---
 
@@ -152,7 +174,9 @@ $\theta\_{y\_n} \cdot f\_{\phi}(x\_n) - \theta\_k\cdot f\_{\phi}(x\_n) \geq 1 - 
 
 --
 
-All we need is $\triangledown\_{\phi}\mathcal{L}^{meta}$!
+<div style="margin-left: 70px; font-size: 32px;">
+All we need is $\triangledown_{\phi}\mathcal{L}^{meta}$!
+</div>
 
 ---
 
@@ -169,7 +193,7 @@ All we need is $\triangledown\_{\phi}\mathcal{L}^{meta}$!
 
 - Short story: the solver is in fact differentiable
 --
-- Long story: with **KKT conditions** and **implicit function theorem**, we can analytically compute the gradient as following
+- Long story: with **strong duality**, **KKT conditions** and **implicit function theorem**, we can analytically compute the gradient as following
 
 <div style="float: right;">
 <img alt="diff-solver-1" src="assets/diff-solver-1.png" style="width: 50%; height: 120px;">
@@ -187,9 +211,15 @@ name: impl
 ## Implementation
 
 1. Data preprocessing, reformat normal dataset as $\mathcal{D}^{meta\-train} = \\{(D^{meta\-train}\_{train}, D^{meta\-train}\_{test})\\}$
-2. The $\text{QPSolver}$ and it's adjoint (with `Zygote.@adjoint`)
+2. Differentiable $\text{QPSolver}$ (with `Zygote.@adjoint`)
 3. The embedding network, $f\_{\phi}$
 4. The inner/outer training loop
+
+--
+
+<div style="width: 300px; margin-top: -100px; margin-left: 500px;">
+<img src="https://i.imgflip.com/49wcxu.jpg" title="made at imgflip.com"/>
+</div>
 
 ---
 
@@ -197,7 +227,7 @@ name: impl
 
 - `data_loader.jl`
 - Extending `sample` from `StatsBase`
-- multiple dispatching make it really easy to integrate with existing library
+- **Multiple dispatching** make it really easy to extend existing library
 
 <div>
 <span style="margin-right: 100px;">
@@ -211,7 +241,7 @@ name: impl
 
 - `qp.jl`
 - Solve the QP with `Convex.jl`, which has nice API and comply to `MathOptInterface`
-- Define it's backward gradient with `Zygote.@adjoint` even the solver itself is not differentiable
+- Define backward gradient with `Zygote.@adjoint` even the solver itself is not differentiable
 - Just like `torch.nn.Module.backward`
 
 <div style="width: 800px; padding-left: 100px;">
@@ -231,11 +261,15 @@ name: impl
 
 ---
 
+## Experiments
+
 - Finally my training script is working
 
 --
 
+<div style="margin-left: 60px; font-size: 32px;">
 But the model is not working ...
+</div>
 
 ---
 
