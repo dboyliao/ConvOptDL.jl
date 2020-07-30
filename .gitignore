@@ -2,3 +2,4 @@ Manifest.toml
 *.ipynb
 temp.jl
 presentation/build
+workspace

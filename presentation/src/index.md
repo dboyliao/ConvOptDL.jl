@@ -6,6 +6,8 @@
 by [`Dboy Liao`](https://github.com/dboyliao)
 </div>
 
+slides: [https://dboyliao.github.io/ConvOptDL.jl/index.html](https://dboyliao.github.io/ConvOptDL.jl/index.html)
+
 ---
 
 ## About Me
@@ -263,13 +265,27 @@ name: impl
 
 ## Experiments
 
-- Finally my training script is working
+- Finally my training script is running
 
 --
 
 <div style="margin-left: 60px; font-size: 32px;">
-But the model is not working ...
+But the model is not working ... (with simple <code class="remark-inline-code">SGD</code>)
 </div>
+
+<img alt="meta-loss" src="assets/meta_loss.png" style="width: 800px;">
+
+---
+
+## Experiments
+
+- Let's use `ADAM`!
+
+--
+
+Errr.....
+
+<img alt="non-symm-mat" src="assets/non-symm-mat.png" style="width: 1000px;">
 
 ---
 
