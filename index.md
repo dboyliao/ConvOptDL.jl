@@ -484,10 +484,24 @@ name: why-im-fucked
 ---
 
 
+
+
+
+
+## `Python` Ecosystem
+
+
 <div style="margin-top: 100px; margin-left: 100px"> <img alt="tf-torch" src="assets/tf-torch.drawio.svg" style="width: 80%;"> </div>
 
 
 ---
+
+
+
+
+
+
+## `Julia` Ecosystem
 
 
 <div style="margin-top: 100px;"> <div style="float: left; width: 450px;">     <img alt="dl-julia" src="assets/dl-julia.drawio.svg"> </div> <div style="float: right; width: 500px;">     <p>It's easy to integrate different libraries in <code style="font-size: 1rem;">Julia</code> because of common interfaces and shared data structures</p>     <p>However, comparing with other machine learning community such as <code style="font-size: 1rem;">Python</code>, it's not matured and stable</p> </div> </div>
