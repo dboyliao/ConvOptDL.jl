@@ -1,5 +1,5 @@
 Manifest.toml
 *.ipynb
 temp.jl
-presentation/build
+slides/build
 workspace

@@ -301,11 +301,15 @@ name: why-im-fucked
 
 ---
 
+## `Python` Ecosystem
+
 <div style="margin-top: 100px; margin-left: 100px">
 <img alt="tf-torch" src="assets/tf-torch.drawio.svg" style="width: 80%;">
 </div>
 
 ---
+
+## `Julia` Ecosystem
 
 <div style="margin-top: 100px;">
 <div style="float: left; width: 450px;">
