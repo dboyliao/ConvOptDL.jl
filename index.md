@@ -28,6 +28,7 @@ slides: [https://dboyliao.github.io/ConvOptDL.jl](https://dboyliao.github.io/Con
       * [Linkedin](https://www.linkedin.com/in/yin-chen-liao-69967188/)
   * Core Developer of [`uTensor`](https://utensor.github.io/website/) project
 
+      * Neural Network inference engine designed for embedded system
       * Author of [`utensor_cgen`](https://github.com/uTensor/utensor_cgen), code generator for `uTensor`
       * Contributor to `uTensor` C++ runtime
 
