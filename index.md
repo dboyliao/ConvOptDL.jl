@@ -197,7 +197,7 @@ for tasks in tasks_sampler # the outer-loop
         # trainig a base model, minimize trainig loss ...etc
         θ = upate_theta(samples, model, θ)
     end
-    update!(meta_opt, meta_loss, ϕ) # update parameters with meta_loss
+    update!(meta_opt, meta_loss, query_set, ϕ) # update parameters with meta_loss
 end
 ```
 
@@ -253,7 +253,7 @@ for tasks in tasks_sampler # the outer-loop
         # trainig a base model, minimize trainig loss ...etc
         θ = upate_theta(samples, model, θ)
     end
-    update!(meta_opt, meta_loss, ϕ) # update parameters with meta_loss
+    update!(meta_opt, meta_loss, query_set, ϕ) # update parameters with meta_loss
 end
 ```
 
