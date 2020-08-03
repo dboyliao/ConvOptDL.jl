@@ -99,12 +99,6 @@ function MetaDataSample(;
     @assert support_n_ways * support_k_shots == size(support_samples)[end-1]
     @assert query_n_ways * query_k_shots == size(query_samples)[end-1]
     @assert size(support_samples)[1:end-2] == size(query_samples)[1:end-2] "size of support samples and query samples should be the same"
-    n_tasks = size(support_samples)[end]
-    for i = 1:n_tasks
-        support_label = support_labels[:, i]
-        query_label = query_labels[:, i]
-        @assert isempty(intersect(support_label, query_label)) "support_labels and query_labels is not disjoint at task $i"
-    end
     MetaDataSample(
         support_n_ways,
         support_k_shots,
@@ -125,46 +119,42 @@ function _sample(
     dloader::FewShotDataLoader;
     support_n_ways = 2,
     support_k_shots = 5,
-    query_n_ways = support_n_ways,
     query_k_shots = support_k_shots,
 )
     # find exclusive train/test samples
     uniq_labels = unique(dloader.labels)
-    idx_map = Dict([(k, i) for (i, k) in enumerate(uniq_labels)])
-    support_target_labels = StatsBase.sample(uniq_labels, support_n_ways, replace = false)
-    idxs = [idx_map[label] for label in support_target_labels]
-    weight_vs = ones(size(uniq_labels, 1))
-    weight_vs[idxs] .= 0
-    query_target_labels = StatsBase.sample(
-        uniq_labels,
-        StatsBase.Weights(weight_vs),
-        query_n_ways,
-        replace = false,
-    )
+    target_labels = StatsBase.sample(uniq_labels, support_n_ways, replace = false)
     support_idxs = []
-    for label in support_target_labels
-        for idx in StatsBase.sample(dloader.label2Idices[label], support_k_shots)
-            push!(support_idxs, idx)
-        end
-    end
-    shuffle!(support_idxs)
-    support_samples = Utils.add_dim(dloader.samples[
-        repeat([:], ndims(dloader.samples) - 1)...,
-        support_idxs,
-    ])
-    support_labels = Utils.add_dim(dloader.labels[support_idxs])
-
     query_idxs = []
-    for label in query_target_labels
-        for idx in StatsBase.sample(dloader.label2Idices[label], query_k_shots)
-            push!(query_idxs, idx)
+    for label in target_labels
+        idx_map = Dict([(v, i) for (i, v) in enumerate(dloader.label2Idices[label])])
+        selected_idxs = StatsBase.sample(dloader.label2Idices[label], support_k_shots)
+        support_idxs = vcat(
+            support_idxs,
+            selected_idxs,
+        )
+        weights = ones(length(dloader.label2Idices[label]))
+        for idx in selected_idxs
+            weights[idx_map[idx]] = 0
         end
+        weights = StatsBase.Weights(weights)
+        selected_idxs =
+            StatsBase.sample(dloader.label2Idices[label], weights, query_k_shots)
+        query_idxs = vcat(
+            query_idxs,
+            selected_idxs
+        )
     end
+    @assert intersect(support_idxs, query_idxs) |> isempty
+    shuffle!(support_idxs)
     shuffle!(query_idxs)
-    query_samples = Utils.add_dim(dloader.samples[
-        repeat([:], ndims(dloader.samples) - 1)...,
-        query_idxs,
-    ])
+    support_samples = Utils.add_dim(
+        dloader.samples[repeat([:], ndims(dloader.samples)-1)..., support_idxs]
+    )
+    support_labels = Utils.add_dim(dloader.labels[support_idxs])
+    query_samples = Utils.add_dim(
+        dloader.samples[repeat([:], ndims(dloader.samples)-1)..., query_idxs]
+    )
     query_labels = Utils.add_dim(dloader.labels[query_idxs])
     return support_samples, support_labels, query_samples, query_labels
 end
@@ -173,20 +163,18 @@ function StatsBase.sample(
     dloader::FewShotDataLoader;
     support_n_ways = 2,
     support_k_shots = 5,
-    query_n_ways = support_n_ways,
     query_k_shots = support_k_shots,
 )
     support_samples, support_labels, query_samples, query_labels = _sample(
         dloader,
         support_n_ways = support_n_ways,
         support_k_shots = support_k_shots,
-        query_n_ways = query_n_ways,
         query_k_shots = query_k_shots,
     )
     MetaDataSample(
         support_n_ways = support_n_ways,
         support_k_shots = support_k_shots,
-        query_n_ways = query_n_ways,
+        query_n_ways = support_n_ways,
         query_k_shots = query_k_shots,
         support_samples = support_samples,
         support_labels = support_labels,
@@ -200,7 +188,6 @@ function StatsBase.sample(
     n_tasks::Integer;
     support_n_ways = 2,
     support_k_shots = 5,
-    query_n_ways = support_n_ways,
     query_k_shots = support_k_shots,
 )
     support_sets = []
@@ -212,7 +199,6 @@ function StatsBase.sample(
             dloader,
             support_n_ways = support_n_ways,
             support_k_shots = support_k_shots,
-            query_n_ways = query_n_ways,
             query_k_shots = query_k_shots,
         )
         push!(support_sets, support)
@@ -224,7 +210,7 @@ function StatsBase.sample(
     MetaDataSample(
         support_n_ways = support_n_ways,
         support_k_shots = support_k_shots,
-        query_n_ways = query_n_ways,
+        query_n_ways = support_n_ways,
         query_k_shots = query_k_shots,
         support_samples = cat(support_sets..., dims = Val(ndim_sample)),
         support_labels = cat(support_labels..., dims = Val(2)),

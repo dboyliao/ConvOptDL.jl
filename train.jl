@@ -112,7 +112,7 @@ if nameof(@__MODULE__) == :Main
     lr = args["learning-rate"]
     model_name, _ = splitext(out_model_file)
     dloader = FewShotDataLoader(data_file)
-    opt = Flux.Optimise.ADAM(lr)
+    opt = Flux.Optimise.Momentum(lr)
     model = resnet12()
     trainmode!(model)
     record = Dict()
@@ -122,7 +122,7 @@ if nameof(@__MODULE__) == :Main
         total_time = 0
         for i = 1:batches_per_episode
             time_start = time()
-            batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 5)
+            batch = sample(dloader, batch_size, support_n_ways = 5, support_k_shots = 2)
             meta_loss = train!(loss_log_softmax, model, batch, opt)
             time_end = time()
             push!(meta_losses, meta_loss)
