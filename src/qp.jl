@@ -68,8 +68,8 @@ function solve_qp(Q, p, G, h, A, b, optimizer = SCS.Optimizer; kwargs...)
 
     if haskey(constraints, "Eq")
         cond_eq = constraints["Eq"]
-        νs_ = isa(cond_eq.dual, AbstractArray) ? dropdims(abs.(cond_eq.dual), dims = 2) :
-            [abs(cond_eq.dual)]
+        νs_ = isa(cond_eq.dual, AbstractArray) ? dropdims(cond_eq.dual, dims = 2) :
+            [cond_eq.dual]
     else
         νs_ = similar(A, 0)
     end
