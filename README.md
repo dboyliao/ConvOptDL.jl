@@ -2,6 +2,14 @@
 
 - Download the [data](https://drive.google.com/file/d/1Vd7br_DJGlaUEbKL0xLNXC0tAx9VuP2W/view?usp=sharing)
 
+## Training
+
+```bash
+juliap train.jl --batches-per-episode=<INTEGER> --batch-size=<INTEGER> --num-episodes=<INTEGER> --log-period=<INTEGER> <DATA_FILE.jls>
+```
+
+ex: `juliap train.jl --batches-per-episode=400 --batch-size=20 --num-episodes=20 --log-period=20 CIFAR_FS-train.jls`
+
 # TODOs
 
 - GPU support
